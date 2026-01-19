@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oxira | Informação sem enrolação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Merriweather', serif; }
+        .sidebar-open { transform: translateX(0); }
+        .sidebar-closed { transform: translateX(-100%); }
+        .backdrop-open { display: block; }
+        .backdrop-closed { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 flex flex-col min-h-screen overflow-x-hidden">
+
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-black text-white p-4 z-50 flex flex-col md:flex-row items-center justify-between border-t-4 border-red-500 shadow-2xl hidden">
+        <div class="mb-4 md:mb-0 max-w-3xl">
+            <p class="text-sm font-medium">🍪 Opa, biscoito? Nós usamos cookies para... espionar? Brincadeira! É só para entender o que você lê e melhorar sua experiência. Sem pegadinhas.</p>
+        </div>
+        <button id="accept-cookies" class="bg-white text-black px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition">
+            Aceitar e Seguir
+        </button>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 backdrop-closed transition-opacity" onclick="toggleSidebar()"></div>
+    <aside id="sidebar" class="fixed top-0 left-0 w-72 h-full bg-white z-40 sidebar-closed transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-black">
+            <span class="text-white font-extrabold text-xl tracking-tighter">MENU</span>
+            <button onclick="toggleSidebar()" class="text-white hover:text-gray-300">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <nav class="p-6 space-y-6">
+            <div class="space-y-3">
+                <a href="/" class="block text-lg font-bold text-gray-900 hover:text-red-600 transition">Home</a>
+                <a href="#ultimas" class="block text-lg font-bold text-gray-900 hover:text-red-600 transition">Últimas Notícias</a>
+            </div>
+            
+            <hr class="border-gray-100">
+            
+            <div class="space-y-4">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Canais Oxira</p>
+                <a href="/categoria/oxira-esportes/" class="flex items-center group">
+                    <span class="w-1 h-6 bg-green-600 mr-3"></span>
+                    <span class="text-gray-700 font-bold group-hover:text-green-600 transition">Esportes</span>
+                </a>
+                <a href="/categoria/oxira-empreendedorismo/" class="flex items-center group">
+                    <span class="w-1 h-6 bg-blue-900 mr-3"></span>
+                    <span class="text-gray-700 font-bold group-hover:text-blue-900 transition">Empreendedorismo</span>
+                </a>
+                <a href="/categoria/oxira-politica/" class="flex items-center group">
+                    <span class="w-1 h-6 bg-red-700 mr-3"></span>
+                    <span class="text-gray-700 font-bold group-hover:text-red-700 transition">Política</span>
+                </a>
+                <a href="/categoria/oxira-alphaville/" class="flex items-center group">
+                    <span class="w-1 h-6 bg-purple-700 mr-3"></span>
+                    <span class="text-gray-700 font-bold group-hover:text-purple-700 transition">Alphaville</span>
+                </a>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <div class="space-y-3">
+                <a href="#" class="block text-sm font-medium text-gray-500 hover:text-black">Newsletter</a>
+                <a href="#" class="block text-sm font-medium text-gray-500 hover:text-black">Podcasts</a>
+                <a href="/admin/" class="block text-sm font-medium text-blue-600 hover:text-blue-800">Login Equipe</a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Header -->
+    <header class="bg-black text-white sticky top-0 z-20 shadow-md">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            
+            <!-- Left: Hambuger & Brand -->
+            <div class="flex items-center space-x-6">
+                <button onclick="toggleSidebar()" class="text-white hover:text-gray-300 focus:outline-none">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <a href="/" class="text-2xl font-serif font-black tracking-tighter text-white">
+                    OXIRA
+                </a>
+            </div>
+
+            <!-- Right: Subscribe & Search -->
+            <div class="flex items-center space-x-6">
+                <a href="#" class="hidden md:block bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase px-4 py-2 rounded transition tracking-wider">
+                    Assine a Newsletter
+                </a>
+                <button class="text-white hover:text-gray-300">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ad Space: Top Billboard -->
+    <div class="bg-gray-100 py-4 border-b border-gray-200">
+        <div class="container mx-auto px-4 flex justify-center">
+            <!-- Mobile Ad (320x50) -->
+            <div class="md:hidden w-[320px] h-[50px] bg-gray-300 flex items-center justify-center border border-gray-400">
+                <span class="text-xs text-gray-500 uppercase tracking-widest">Publicidade (Mobile)</span>
+            </div>
+            <!-- Desktop Ad (728x90) -->
+            <div class="hidden md:flex w-[728px] h-[90px] bg-gray-300 items-center justify-center border border-gray-400">
+                <span class="text-sm text-gray-500 uppercase tracking-widest">Publicidade (Top Banner)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white pt-16 pb-8 border-t border-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-12 mb-12">
+                <div class="col-span-1 md:col-span-2">
+                    <h2 class="text-3xl font-serif font-black mb-6">OXIRA</h2>
+                    <p class="text-gray-400 max-w-sm leading-relaxed">
+                        A mais nova fonte de informação direta e sem enrolação. 
+                        Negócio, mercado, esporte e política com contexto e opinião.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Institucional</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Quem Somos</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Expediente</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Anuncie</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Legal</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Política de Privacidade</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Termos de Uso</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+                <p>&copy; 2025 Oxira Mídia. Todos os direitos reservados.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white"><i data-lucide="instagram" class="w-4 h-4"></i></a>
+                    <a href="#" class="hover:text-white"><i data-lucide="twitter" class="w-4 h-4"></i></a>
+                    <a href="#" class="hover:text-white"><i data-lucide="linkedin" class="w-4 h-4"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
+            if (sidebar.classList.contains('sidebar-closed')) {
+                sidebar.classList.remove('sidebar-closed');
+                sidebar.classList.add('sidebar-open');
+                backdrop.classList.remove('backdrop-closed');
+                backdrop.classList.add('backdrop-open');
+                document.body.style.overflow = 'hidden';
+            } else {
+                sidebar.classList.remove('sidebar-open');
+                sidebar.classList.add('sidebar-closed');
+                backdrop.classList.remove('backdrop-open');
+                backdrop.classList.add('backdrop-closed');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Cookie Logic
+        const cookieBanner = document.getElementById('cookie-banner');
+        if (!localStorage.getItem('oxira_cookies_accepted')) {
+            setTimeout(() => {
+                cookieBanner.classList.remove('hidden');
+            }, 1000);
+        }
+
+        document.getElementById('accept-cookies').addEventListener('click', () => {
+            localStorage.setItem('oxira_cookies_accepted', 'true');
+            cookieBanner.classList.add('hidden');
+        });
+    </script>
+
+</body>
+</html>

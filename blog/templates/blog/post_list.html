@@ -1,0 +1,135 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div class="mt-4 mb-12 border-b border-black pb-4">
+    <div class="flex justify-between items-center">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-red-600">Últimas Notícias</h2>
+        <span class="text-xs text-gray-400 font-mono">{% now "d de F, Y" %}</span>
+    </div>
+</div>
+
+{% if posts %}
+    <!-- Featured Section (Forbes Style) -->
+    <section class="grid lg:grid-cols-12 gap-12 mb-20 animate-fade-in-up">
+        <!-- Main Highlight -->
+        <article class="lg:col-span-8 group cursor-pointer">
+            {% with featured=posts.0 %}
+            <div class="relative overflow-hidden mb-4 rounded-sm">
+                <!-- Placeholder Image (In real app, use post.image) -->
+                <div class="bg-gray-200 aspect-video w-full object-cover group-hover:scale-105 transition duration-700 ease-in-out"></div>
+                <div class="absolute bottom-0 left-0 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-widest">
+                    {{ featured.category.name|default:"Geral" }}
+                </div>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-serif font-bold text-gray-900 leading-tight group-hover:underline decoration-2 underline-offset-4 decoration-black">
+                <a href="{% url 'post_detail' featured.slug %}">{{ featured.title }}</a>
+            </h1>
+            <p class="mt-4 text-lg text-gray-600 leading-relaxed font-serif">
+                {{ featured.content|striptags|truncatewords:40 }}
+            </p>
+            <div class="mt-4 flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                <span>Por {{ featured.author.username }}</span>
+                <span class="mx-2">|</span>
+                <span>{{ featured.published_date|timesince }} atrás</span>
+            </div>
+            {% endwith %}
+        </article>
+
+        <!-- Ad Space: Middle Mobile Only -->
+        <div class="lg:hidden col-span-12 flex justify-center py-6 border-t border-b border-gray-100 my-4">
+            <div class="w-[300px] h-[250px] bg-gray-200 flex items-center justify-center border border-gray-300">
+                <span class="text-xs text-gray-400 uppercase">Publicidade</span>
+            </div>
+        </div>
+
+        <!-- Sidebar List -->
+        <aside class="lg:col-span-4 border-l border-gray-100 pl-0 lg:pl-12 space-y-10">
+            <!-- Ad Space: Sidebar Box -->
+            <div class="hidden lg:flex w-full aspect-square bg-gray-50 items-center justify-center border border-gray-200 mb-8">
+                <span class="text-xs text-gray-400 uppercase tracking-widest">Publicidade (Sidebar)</span>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-black mb-6 border-b border-black pb-2">Mais Lidas</h3>
+                <div class="space-y-6">
+                    {% for post in posts|slice:"1:5" %}
+                    <article class="group">
+                        <div class="text-xs font-bold uppercase tracking-widest mb-1 
+                            {% if 'esportes' in post.category.slug %}text-green-600
+                            {% elif 'politica' in post.category.slug %}text-red-600
+                            {% elif 'empreendedorismo' in post.category.slug %}text-blue-900
+                            {% elif 'alphaville' in post.category.slug %}text-purple-700
+                            {% else %}text-gray-500{% endif %}">
+                            {{ post.category.name }}
+                        </div>
+                        <h4 class="text-lg font-bold leading-tight group-hover:text-gray-600 transition">
+                            <a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a>
+                        </h4>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 p-6 text-center border border-gray-100">
+                <h4 class="font-serif font-bold text-xl mb-2">Oxira Newsletter</h4>
+                <p class="text-sm text-gray-600 mb-4">Receba análises exclusivas diretamente no seu e-mail.</p>
+                <button class="w-full bg-black text-white py-2 px-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition">
+                    Inscrever-se
+                </button>
+            </div>
+        </aside>
+    </section>
+
+    <!-- Category Sections -->
+    <div class="border-t-4 border-black pt-12 mb-12">
+        <h2 class="text-4xl font-serif font-black mb-12 text-center">Profundidade por Tema</h2>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Coluna 1 -->
+            <div class="space-y-8">
+                <h3 class="text-xl font-bold border-b-2 border-blue-900 pb-2 text-blue-900 uppercase tracking-widest">Empreendedorismo</h3>
+                {% for post in posts %}
+                    {% if 'empreendedorismo' in post.category.slug %}
+                    <article class="mb-6">
+                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                    </article>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Coluna 2 -->
+            <div class="space-y-8">
+                <h3 class="text-xl font-bold border-b-2 border-green-600 pb-2 text-green-600 uppercase tracking-widest">Esportes</h3>
+                {% for post in posts %}
+                    {% if 'esportes' in post.category.slug %}
+                    <article class="mb-6">
+                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                    </article>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+             <!-- Coluna 3 -->
+             <div class="space-y-8">
+                <h3 class="text-xl font-bold border-b-2 border-red-600 pb-2 text-red-600 uppercase tracking-widest">Política</h3>
+                {% for post in posts %}
+                    {% if 'politica' in post.category.slug %}
+                    <article class="mb-6">
+                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                    </article>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <div class="text-center py-20">
+        <p class="text-gray-500">Carregando conteúdo...</p>
+    </div>
+{% endif %}
+
+{% endblock %}
