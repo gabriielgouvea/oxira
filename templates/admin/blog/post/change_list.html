@@ -7,6 +7,12 @@
 {% block object-tools-items %}
 	<li class="mr-2" style="list-style:none;">
 		<style>
+			/* Remove UI nativa de ordenação do Django Admin (setas, prioridade e X) */
+			.sortoptions, .sortremove, .sortpriority { display: none !important; }
+			th.sortable a { pointer-events: none; cursor: default; }
+			th.sortable a:hover { text-decoration: none; }
+			th.sortable { user-select: none; }
+
 			.oxira-sort { position: relative; display: inline-block; }
 			.oxira-sort-menu {
 				display: none;
@@ -93,6 +99,7 @@
 				if (value) params.set('sort', value);
 				else params.delete('sort');
 				params.delete('e');
+				params.delete('o');
 				params.delete('p');
 				window.location.href = url.pathname + '?' + params.toString();
 			}

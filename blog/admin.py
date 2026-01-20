@@ -259,6 +259,11 @@ class PendingAuthorAdmin(UserAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
+    class Media:
+        js = (
+            'admin/js/live_search.js',
+        )
+
     # Destaque na Listagem
     list_display = ('title_display', 'status_badge', 'author', 'category', 'published_date')
     list_filter = ()
@@ -269,6 +274,9 @@ class PostAdmin(admin.ModelAdmin):
 
     # Sem ações em massa (remove o seletor + botão "Ir")
     actions = None
+
+    # Remove a ordenação nativa por clique nas colunas (setinhas, prioridade, "x")
+    sortable_by = ()
     
     # Preenchimento automático de slug
     prepopulated_fields = {'slug': ('title',)}
