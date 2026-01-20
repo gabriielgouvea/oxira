@@ -12,6 +12,26 @@
 {# Coloca apenas um botão Salvar no FINAL, dentro da coluna principal #}
 {% block after_field_sets %}
   <div class="col-12 col-lg-9">
+    {% if original and oxira_admin_password_url and oxira_reset_link %}
+      <div class="card mb-3" style="border-radius: 14px;">
+        <div class="card-body" style="padding: 16px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; opacity: .75;">Senha</div>
+              <div style="font-size: 13px; opacity: .85;">Redefina você mesmo ou copie o link para enviar ao escritor.</div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <a class="btn btn-dark" href="{{ oxira_admin_password_url }}">Redefinir senha</a>
+              <button type="button" class="btn btn-outline-dark" id="oxira-copy-reset-link" data-link="{{ oxira_reset_link|escape }}">Copiar link de redefinição</button>
+            </div>
+          </div>
+          <div class="text-muted" style="margin-top: 10px; font-size: 12px; word-break: break-all;">
+            Link gerado: <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">{{ oxira_reset_link }}</span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <div class="submit-row oxira-submit-row">
       <input type="submit" value="{% translate 'Salvar' %}" class="btn btn-success btn-lg" name="_save">
     </div>

@@ -63,13 +63,14 @@ ROOT_URLCONF = 'setup.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'blog.context_processors.admin_signup_form',
             ],
         },
     },
@@ -199,6 +200,17 @@ JAZZMIN_SETTINGS = {
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
     "order_with_respect_to": ["blog", "blog.Post", "blog.Category", "auth"],
 
+    # Links extras no menu lateral
+    "custom_links": {
+        "blog": [
+            {
+                "name": "Dashboard",
+                "url": "/admin/oxira-dashboard/",
+                "icon": "fas fa-chart-line",
+            },
+        ],
+    },
+
     # Custom icons for side menu apps/models See https://fontawesome.com/icons?d=gallery&m=free&v=5.0.0,5.0.1,5.0.10,5.0.11,5.0.12,5.0.13,5.15.5
     # for the full list of 5.13.0 free icon classes
     "icons": {
@@ -211,6 +223,14 @@ JAZZMIN_SETTINGS = {
     # Icons that are used when one is not specified
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
+
+    # Change view
+    # Opções: single | horizontal_tabs | vertical_tabs | collapsible | carousel
+    # Aqui queremos tudo em uma página só, sem abas.
+    "changeform_format": "single",
+    "changeform_format_overrides": {
+        "auth.user": "single",
+    },
 }
 
 JAZZMIN_UI_TWEAKS = {

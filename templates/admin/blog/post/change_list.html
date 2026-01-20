@@ -1,0 +1,133 @@
+{% extends "admin/change_list.html" %}
+
+{# Remove os breadcrumbs no topo ("Início / Blog / Posts") #}
+{% block breadcrumbs %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block object-tools-items %}
+	<li class="mr-2" style="list-style:none;">
+		<style>
+			.oxira-sort { position: relative; display: inline-block; }
+			.oxira-sort-menu {
+				display: none;
+				position: absolute;
+				right: 0;
+				top: calc(100% + 8px);
+				min-width: 300px;
+				background: #fff;
+				border: 1px solid rgba(0,0,0,.10);
+				border-radius: 12px;
+				box-shadow: 0 18px 40px rgba(0,0,0,.16);
+				padding: 6px;
+				z-index: 1100;
+			}
+			.oxira-sort-menu.open { display: block; }
+			.oxira-sort-header {
+				padding: 8px 10px;
+				font-size: 11px;
+				font-weight: 900;
+				text-transform: uppercase;
+				letter-spacing: .08em;
+				color: rgba(107,114,128,.95);
+			}
+			.oxira-sort-item {
+				display: block;
+				padding: 9px 10px;
+				border-radius: 10px;
+				color: #111827;
+				text-decoration: none;
+				cursor: pointer;
+				font-weight: 700;
+			}
+			.oxira-sort-item:hover { background: rgba(220,38,38,.08); color: #dc2626; }
+			.oxira-sort-divider { height: 1px; background: rgba(0,0,0,.08); margin: 6px 4px; }
+			.oxira-sort-item.active { background: rgba(17,24,39,.06); }
+			.oxira-sort-item.active::before { content: "✓ "; color: #16a34a; font-weight: 900; }
+		</style>
+
+		<div class="oxira-sort">
+			<button class="btn btn-outline-secondary btn-sm" type="button" id="oxiraSortBtn" aria-haspopup="true" aria-expanded="false" title="Classificar">
+				<i class="fas fa-sort-amount-down-alt"></i>
+				<span class="d-none d-md-inline">Classificar</span>
+			</button>
+			<div class="oxira-sort-menu" id="oxiraSortMenu" role="menu" aria-labelledby="oxiraSortBtn">
+				<div class="oxira-sort-header">Ordenar por</div>
+				<a class="oxira-sort-item" href="#" data-sort="published_desc">Data de publicação (mais recente)</a>
+				<a class="oxira-sort-item" href="#" data-sort="published_asc">Data de publicação (mais antiga)</a>
+				<div class="oxira-sort-divider"></div>
+				<a class="oxira-sort-item" href="#" data-sort="status">Status</a>
+				<a class="oxira-sort-item" href="#" data-sort="author">Autor</a>
+				<a class="oxira-sort-item" href="#" data-sort="category">Categoria</a>
+				<div class="oxira-sort-divider"></div>
+				<a class="oxira-sort-item" style="color: rgba(107,114,128,.95);" href="#" data-sort="">Limpar ordenação</a>
+			</div>
+		</div>
+	</li>
+
+	{{ block.super }}
+
+	<script>
+		(function () {
+			const btn = document.getElementById('oxiraSortBtn');
+			const menu = document.getElementById('oxiraSortMenu');
+			if (!btn || !menu) return;
+
+			function isOpen() {
+				return menu.classList.contains('open');
+			}
+			function openMenu() {
+				menu.classList.add('open');
+				btn.setAttribute('aria-expanded', 'true');
+			}
+			function closeMenu() {
+				menu.classList.remove('open');
+				btn.setAttribute('aria-expanded', 'false');
+			}
+			function toggleMenu() {
+				if (isOpen()) closeMenu(); else openMenu();
+			}
+
+			function applySort(value) {
+				const url = new URL(window.location.href);
+				const params = url.searchParams;
+				if (value) params.set('sort', value);
+				else params.delete('sort');
+				params.delete('e');
+				params.delete('p');
+				window.location.href = url.pathname + '?' + params.toString();
+			}
+
+			// Marcar item atual
+			const current = new URL(window.location.href).searchParams.get('sort') || '';
+			menu.querySelectorAll('[data-sort]').forEach(function (el) {
+				if ((el.getAttribute('data-sort') || '') === current) {
+					el.classList.add('active');
+				}
+			});
+
+			btn.addEventListener('click', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				toggleMenu();
+			});
+
+			menu.addEventListener('click', function (e) {
+				const el = e.target.closest('[data-sort]');
+				if (!el) return;
+				e.preventDefault();
+				e.stopPropagation();
+				applySort(el.getAttribute('data-sort'));
+			});
+
+			document.addEventListener('click', function (e) {
+				if (!isOpen()) return;
+				if (menu.contains(e.target) || btn.contains(e.target)) return;
+				closeMenu();
+			});
+
+			document.addEventListener('keydown', function (e) {
+				if (e.key === 'Escape') closeMenu();
+			});
+		})();
+	</script>
+{% endblock %}

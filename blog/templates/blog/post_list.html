@@ -28,7 +28,9 @@
                 {{ featured.content|striptags|truncatewords:40 }}
             </p>
             <div class="mt-4 flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
-                <span>Por {{ featured.author.username }}</span>
+                <span>
+                    Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' featured.author.username %}">{{ featured.author.get_full_name|default:featured.author.username }}</a>
+                </span>
                 <span class="mx-2">|</span>
                 <span>{{ featured.published_date|timesince }} atrás</span>
             </div>
@@ -65,6 +67,9 @@
                         <h4 class="text-lg font-bold leading-tight group-hover:text-gray-600 transition">
                             <a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a>
                         </h4>
+                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
+                        </div>
                     </article>
                     {% endfor %}
                 </div>
@@ -92,6 +97,9 @@
                     {% if 'empreendedorismo' in post.category.slug %}
                     <article class="mb-6">
                         <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
+                        </div>
                         <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
                     </article>
                     {% endif %}
@@ -105,6 +113,9 @@
                     {% if 'esportes' in post.category.slug %}
                     <article class="mb-6">
                         <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
+                        </div>
                         <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
                     </article>
                     {% endif %}
@@ -118,6 +129,9 @@
                     {% if 'politica' in post.category.slug %}
                     <article class="mb-6">
                         <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
+                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
+                        </div>
                         <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
                     </article>
                     {% endif %}

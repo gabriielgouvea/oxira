@@ -1,0 +1,457 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Oxira Dashboard{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .oxira-help {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 114, 128, .35);
+      color: rgba(107, 114, 128, .95);
+      font-weight: 900;
+      font-size: 10px;
+      line-height: 1;
+      cursor: help;
+      user-select: none;
+      position: relative;
+      top: -1px;
+    }
+
+    .oxira-help:hover {
+      border-color: rgba(220, 38, 38, .55);
+      color: rgba(220, 38, 38, 1);
+      background: rgba(220, 38, 38, .08);
+    }
+
+    .oxira-help[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translate(-50%, -100%);
+      background: rgba(17, 24, 39, .96);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      width: max-content;
+      max-width: 320px;
+      white-space: normal;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease;
+      z-index: 50;
+    }
+
+    .oxira-help[data-tip]::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translate(-50%, -2px);
+      border: 6px solid transparent;
+      border-top-color: rgba(17, 24, 39, .96);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease;
+      z-index: 51;
+    }
+
+    .oxira-help:hover::after,
+    .oxira-help:hover::before {
+      opacity: 1;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap: 12px;">
+    <div>
+      <h1 style="font-weight: 900; letter-spacing: -0.02em;">Oxira Dashboard</h1>
+      <div class="text-muted">Período: <strong>{{ range_label }}</strong></div>
+    </div>
+
+    <form method="get" class="d-flex align-items-end flex-wrap" style="gap: 10px;">
+      <div>
+        <label class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">Período</label>
+        <select name="preset" class="form-control">
+          <option value="today" {% if preset == 'today' %}selected{% endif %}>Hoje</option>
+          <option value="7d" {% if preset == '7d' %}selected{% endif %}>Últimos 7 dias</option>
+          <option value="30d" {% if preset == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+          <option value="custom" {% if preset == 'custom' %}selected{% endif %}>Intervalo</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">Início</label>
+        <input type="date" name="start" value="{{ start|date:'Y-m-d' }}" class="form-control" />
+      </div>
+      <div>
+        <label class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">Fim</label>
+        <input type="date" name="end" value="{{ end|date:'Y-m-d' }}" class="form-control" />
+      </div>
+      <div>
+        <button class="btn btn-primary" type="submit" style="font-weight:900;">Aplicar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row" style="margin-top: 18px;">
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Views (período)
+            <span class="oxira-help" data-tip="Quantas vezes páginas de post foram abertas dentro do período selecionado. Um mesmo leitor pode gerar mais de 1 view se voltar ou recarregar.">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ total_views }}</div>
+          <div class="text-muted" style="font-size: 12px;">Hoje: <strong>{{ views_today }}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Únicos (estimado)
+            <span class="oxira-help" data-tip="Estimativa de pessoas diferentes no período. Calculado por sessão (sem IP), então é uma aproximação.">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ unique_views }}</div>
+          <div class="text-muted" style="font-size: 12px;">Baseado em sessão</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Cliques (externos)
+            <span class="oxira-help" data-tip="Quantidade de cliques em links que levam para fora do site (ex.: anunciantes, fontes, parceiros).">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ total_clicks }}</div>
+          <div class="text-muted" style="font-size: 12px;">Hoje: <strong>{{ clicks_today }}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            CTR
+            <span class="oxira-help" data-tip="Taxa de cliques: cliques externos ÷ views, em %. Quanto maior, mais a matéria levou o leitor a clicar em algum link externo.">?</span>
+          </div>
+           <div style="font-size: 34px; font-weight: 900;">{{ ctr|floatformat:2 }}%</div>
+          <div class="text-muted" style="font-size: 12px;">Cliques / views</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Tempo médio
+            <span class="oxira-help" data-tip="Tempo médio (em segundos) que uma sessão ficou na página do post. É uma estimativa baseada em eventos de engajamento enviados pelo navegador.">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ avg_time_seconds|floatformat:0 }}s</div>
+          <div class="text-muted" style="font-size: 12px;">Estimado por sessão</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Scroll médio
+            <span class="oxira-help" data-tip="Percentual médio máximo de scroll atingido por sessão. Ex.: 80% significa que, em média, o leitor chegou perto do final da matéria.">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ avg_scroll_percent|floatformat:0 }}%</div>
+          <div class="text-muted" style="font-size: 12px;">Máximo por sessão</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="text-muted" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;">
+            Taxa de leitura
+            <span class="oxira-help" data-tip="% de sessões que chegaram em pelo menos 75% de scroll. Útil para medir se a matéria foi lida até quase o fim.">?</span>
+          </div>
+          <div style="font-size: 34px; font-weight: 900;">{{ read_rate|floatformat:1 }}%</div>
+          <div class="text-muted" style="font-size: 12px;">Sessões com scroll ≥ 75%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <h3 style="font-weight: 900;">Views x Cliques (por dia)</h3>
+            <div class="text-muted" style="font-size: 12px;">Postagens hoje: <strong>{{ posts_published_today }}</strong></div>
+          </div>
+          <canvas id="oxiraChart" height="90"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Top autores (publicações)</h3>
+          <div class="table-responsive" style="max-height: 340px; overflow:auto;">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Autor</th>
+                  <th class="text-right">Posts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in top_authors %}
+                  <tr>
+                    <td>
+                      {{ a.author__first_name }} {{ a.author__last_name }}
+                      <div class="text-muted" style="font-size:12px;">@{{ a.author__username }}</div>
+                    </td>
+                    <td class="text-right"><strong>{{ a.posts }}</strong></td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="text-muted">Sem dados no período.</td><td></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Origens de tráfego</h3>
+          <canvas id="oxiraSourcesChart" height="110"></canvas>
+          <div class="text-muted" style="font-size: 12px; margin-top: 8px;">Direct / Search / Social / Referral / UTM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Top referrers</h3>
+          <div class="table-responsive" style="max-height: 360px; overflow:auto;">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Domínio</th>
+                  <th class="text-right">Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in top_ref_domains %}
+                  <tr>
+                    <td>{{ r.ref_domain }}</td>
+                    <td class="text-right"><strong>{{ r.count }}</strong></td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="text-muted">Sem referrers no período.</td><td></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Top matérias (por views)</h3>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Matéria</th>
+                  <th class="text-right">Views</th>
+                  <th class="text-right">Únicos</th>
+                  <th class="text-right">Cliques</th>
+                  <th class="text-right">CTR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in top_posts %}
+                  <tr>
+                    <td>
+                      <a href="/admin/blog/post/{{ p.post_id }}/change/" style="font-weight:800;">{{ p.post__title }}</a>
+                      <div class="text-muted" style="font-size:12px;">@{{ p.post__author__username }}</div>
+                    </td>
+                    <td class="text-right"><strong>{{ p.views }}</strong></td>
+                    <td class="text-right">{{ p.uniques }}</td>
+                    <td class="text-right">{{ p.clicks }}</td>
+                    <td class="text-right">{{ p.ctr|floatformat:2 }}%</td>
+                     </tr>
+                {% empty %}
+                  <tr><td class="text-muted">Sem dados no período.</td><td></td><td></td><td></td><td></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Top links (cliques)</h3>
+          <div class="table-responsive" style="max-height: 420px; overflow:auto;">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>URL</th>
+                  <th class="text-right">Cliques</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for l in top_links %}
+                  <tr>
+                    <td style="max-width: 240px;">
+                      <a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.url }}</a>
+                    </td>
+                    <td class="text-right"><strong>{{ l.clicks }}</strong></td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="text-muted">Sem cliques no período.</td><td></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-3">
+      <div class="card" style="border-radius: 14px;">
+        <div class="card-body">
+          <h3 style="font-weight: 900;">Campanhas (UTM)</h3>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>utm_source</th>
+                  <th>utm_medium</th>
+                  <th>utm_campaign</th>
+                  <th class="text-right">Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for u in top_utm %}
+                  <tr>
+                    <td>{{ u.utm_source }}</td>
+                    <td>{{ u.utm_medium }}</td>
+                    <td>{{ u.utm_campaign }}</td>
+                    <td class="text-right"><strong>{{ u.count }}</strong></td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="text-muted">Sem UTMs no período.</td><td></td><td></td><td></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="text-muted" style="font-size: 12px;">Dica: use links com ?utm_source=...&utm_medium=...&utm_campaign=... para rastrear.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{{ views_series|json_script:"oxira-views-series" }}
+{{ clicks_series|json_script:"oxira-clicks-series" }}
+{{ sources|json_script:"oxira-sources" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const viewsSeries = JSON.parse(document.getElementById('oxira-views-series').textContent);
+  const clicksSeries = JSON.parse(document.getElementById('oxira-clicks-series').textContent);
+  const sources = JSON.parse(document.getElementById('oxira-sources').textContent);
+
+  const byDay = new Map();
+  for (const v of viewsSeries) byDay.set(String(v.day), { day: String(v.day), views: v.count, clicks: 0 });
+  for (const c of clicksSeries) {
+    const key = String(c.day);
+    const item = byDay.get(key) || { day: key, views: 0, clicks: 0 };
+    item.clicks = c.count;
+    byDay.set(key, item);
+  }
+
+  const rows = Array.from(byDay.values()).sort((a,b)=>a.day.localeCompare(b.day));
+  const labels = rows.map(r=>r.day);
+  const views = rows.map(r=>r.views);
+  const clicks = rows.map(r=>r.clicks);
+
+  new Chart(document.getElementById('oxiraChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Views', data: views, borderColor: '#111827', backgroundColor: 'rgba(17,24,39,.1)', tension: .35, fill: true },
+        { label: 'Cliques', data: clicks, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,.12)', tension: .35, fill: true },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Sources chart
+  const sourceLabels = sources.map(s => s.source_type || 'unknown');
+  const sourceCounts = sources.map(s => s.count);
+  new Chart(document.getElementById('oxiraSourcesChart'), {
+    type: 'bar',
+    data: {
+      labels: sourceLabels,
+      datasets: [{
+        label: 'Views',
+        data: sourceCounts,
+        backgroundColor: 'rgba(220,38,38,.18)',
+        borderColor: '#dc2626',
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+{% endblock %}

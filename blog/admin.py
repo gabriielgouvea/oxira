@@ -1,8 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import Post, Category, UserProfile
+from django.contrib.auth.models import Group
+from django.contrib.auth.tokens import default_token_generator
+from .models import Post, Category, UserProfile, PendingAuthor
 from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.admin.views.main import ChangeList
 
 from django.forms import CheckboxSelectMultiple
 from django.db import models
@@ -39,6 +45,11 @@ class UserProfileInline(admin.StackedInline):
                 'allowed_categories',
                 'cpf',
                 'phone',
+                'website',
+                'instagram',
+                'twitter',
+                'linkedin',
+                'facebook',
                 'cep',
                 'address',
                 'number',
@@ -65,10 +76,32 @@ class UserAdmin(BaseUserAdmin):
     
     # CSS e JS Customizados
     class Media:
-        js = ('admin/js/live_search.js', 'admin/js/cep_lookup.js')
+        js = (
+            'admin/js/live_search.js',
+            'admin/js/cep_lookup.js',
+            'admin/js/user_password_cleanup.js',
+            'admin/js/copy_reset_link.js',
+        )
         css = {
-            'all': ('admin/css/clean_users.css', 'admin/css/onepage_form.css')
+            'all': (
+                'admin/css/clean_users.css',
+                'admin/css/onepage_form.css',
+            )
         }
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+
+        if object_id:
+            user_obj = self.get_object(request, object_id)
+            if user_obj is not None:
+                uidb64 = urlsafe_base64_encode(force_bytes(user_obj.pk))
+                token = default_token_generator.make_token(user_obj)
+                reset_path = reverse('password_reset_confirm', kwargs={'uidb64': uidb64, 'token': token})
+                extra_context['oxira_reset_link'] = request.build_absolute_uri(reset_path)
+                extra_context['oxira_admin_password_url'] = reverse('admin:auth_user_password_change', args=[user_obj.pk])
+
+        return super().changeform_view(request, object_id, form_url, extra_context=extra_context)
 
     # UMA PÁGINA SÓ, sem blocos/títulos: tudo em coluna única
     save_on_top = False
@@ -193,21 +226,78 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
+try:
+    admin.site.unregister(Group)
+except admin.sites.NotRegistered:
+    pass
+
+
+@admin.register(PendingAuthor)
+class PendingAuthorAdmin(UserAdmin):
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(is_active=False, profile__role='author')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return _is_admin(request.user)
+
+    def has_view_permission(self, request, obj=None):
+        return _is_admin(request.user)
+
+    def has_change_permission(self, request, obj=None):
+        return _is_admin(request.user)
+
+    actions = ['approve_selected']
+
+    @admin.action(description='Aprovar autores selecionados')
+    def approve_selected(self, request, queryset):
+        updated = queryset.update(is_active=True, is_staff=True)
+        self.message_user(request, f'{updated} autor(es) aprovado(s).')
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     # Destaque na Listagem
     list_display = ('title_display', 'status_badge', 'author', 'category', 'published_date')
-    list_filter = ('status', 'category', 'author', 'created_date', 'published_date')
+    list_filter = ()
     search_fields = ('title', 'content', 'subtitle', 'keywords')
     
     # Navegação por data
-    date_hierarchy = 'published_date'
+    date_hierarchy = None
+
+    # Sem ações em massa (remove o seletor + botão "Ir")
+    actions = None
     
     # Preenchimento automático de slug
     prepopulated_fields = {'slug': ('title',)}
     
     # Campos que usam ID (para performance se tiver muitos users)
     raw_id_fields = ('author',)
+
+    class _PostChangeList(ChangeList):
+        def get_filters_params(self, params=None):
+            lookup_params = super().get_filters_params(params=params)
+            lookup_params.pop('sort', None)
+            return lookup_params
+
+    def get_changelist(self, request, **kwargs):
+        return self._PostChangeList
+
+    def get_ordering(self, request):
+        sort = (request.GET.get('sort') or '').strip()
+        if sort == 'status':
+            return ('status', '-published_date', '-created_date')
+        if sort == 'author':
+            return ('author__username', '-published_date', '-created_date')
+        if sort == 'category':
+            return ('category__name', '-published_date', '-created_date')
+        if sort == 'published_asc':
+            return ('published_date', 'created_date')
+        if sort == 'published_desc':
+            return ('-published_date', '-created_date')
+        return super().get_ordering(request)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
