@@ -1,0 +1,1206 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div class="mt-4 mb-10 border-b border-black pb-4">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div>
+            <h1 class="text-3xl md:text-4xl font-serif font-black tracking-tight">Consultas</h1>
+            <p class="mt-2 text-gray-600">Cotações, cripto e feriados do dia — rápido e fácil.</p>
+        </div>
+        <div class="text-sm text-gray-500 font-mono text-right">
+            <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Horário de Brasília</div>
+            <div id="oxira-clock">Carregando…</div>
+            <div class="mt-2 flex items-center justify-end gap-2">
+                <button id="tz-choose" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold uppercase tracking-widest text-gray-800">
+                    <span>Outros horários</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="oxira-world-clocks" class="mt-2 space-y-1 text-xs text-gray-500"></div>
+        </div>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-12 gap-8">
+    <section class="lg:col-span-8 space-y-8">
+        <!-- Câmbio (cards) -->
+        <div class="bg-white border border-gray-100 shadow-sm rounded-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Câmbio</h2>
+                <div class="flex items-center gap-3">
+                    <button id="fx-choose" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold uppercase tracking-widest text-gray-800">
+                        <span>Escolher moedas</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                    <button id="fx-refresh" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold uppercase tracking-widest text-red-700">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="fx-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+            <div id="fx-error" class="hidden mt-3 text-sm text-red-600"></div>
+
+            <!-- Seletor de moedas -->
+            <div id="fx-picker-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+            <div id="fx-picker" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+                <div class="w-full max-w-2xl bg-white rounded-sm shadow-2xl border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Moedas</div>
+                            <div class="text-lg font-extrabold">Escolha o que você quer ver</div>
+                        </div>
+                        <button id="fx-picker-close" class="text-gray-600 hover:text-black text-sm font-bold uppercase tracking-widest">Fechar</button>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="text-sm text-gray-600 mb-4">
+                            Top 3 fixo (USD, EUR, GBP). Você pode adicionar mais moedas (limite de 6 no total).
+                        </div>
+
+                        <div id="fx-picker-list" class="grid sm:grid-cols-2 gap-3"></div>
+
+                        <div class="mt-6 flex items-center justify-end gap-3">
+                            <button id="fx-picker-cancel" class="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-gray-200 hover:bg-gray-50">Cancelar</button>
+                            <button id="fx-picker-apply" class="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-black text-white hover:bg-gray-800">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cripto -->
+        <div class="bg-white border border-gray-100 shadow-sm rounded-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Cripto</h2>
+                <div class="flex items-center gap-3">
+                    <button id="crypto-choose" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold uppercase tracking-widest text-gray-800">
+                        <span>Escolher</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                    <button id="crypto-refresh" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold uppercase tracking-widest text-red-700">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="crypto-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+
+            <div id="crypto-error" class="hidden mt-3 text-sm text-red-600"></div>
+
+            <!-- Seletor de cripto -->
+            <div id="crypto-picker-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+            <div id="crypto-picker" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+                <div class="w-full max-w-2xl bg-white rounded-sm shadow-2xl border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Cripto</div>
+                            <div class="text-lg font-extrabold">Escolha o que você quer ver</div>
+                        </div>
+                        <button id="crypto-picker-close" class="text-gray-600 hover:text-black text-sm font-bold uppercase tracking-widest">Fechar</button>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-sm text-gray-600 mb-4">
+                            Top 2 fixo (BTC, ETH). Você pode adicionar mais moedas (limite de 6 no total).
+                        </div>
+                        <div id="crypto-picker-list" class="grid sm:grid-cols-2 gap-3"></div>
+                        <div class="mt-6 flex items-center justify-end gap-3">
+                            <button id="crypto-picker-cancel" class="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-gray-200 hover:bg-gray-50">Cancelar</button>
+                            <button id="crypto-picker-apply" class="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-black text-white hover:bg-gray-800">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <aside class="lg:col-span-4 space-y-8">
+        <!-- Feriados -->
+        <div class="bg-white border border-gray-100 shadow-sm rounded-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Feriados</h2>
+                <button id="holidays-refresh" class="text-xs font-bold uppercase tracking-widest text-red-600 hover:text-red-700">Atualizar</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Hoje</div>
+                    <div class="mt-2 text-sm text-gray-700" id="holidays-today">Carregando…</div>
+                </div>
+
+                <div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Próximo</div>
+                    <div class="mt-2 text-sm text-gray-700" id="holidays-next">Carregando…</div>
+                </div>
+
+                <div id="holidays-error" class="hidden text-sm text-red-600"></div>
+            </div>
+
+                <div class="mt-4 bg-gray-50 border border-gray-100 rounded-sm p-4">
+                    <div class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Resumo (IA)</div>
+                    <div class="text-sm text-gray-700" id="holidays-summary">Carregando…</div>
+                </div>
+        </div>
+
+        <!-- Datas & Curiosidades -->
+        <div class="bg-white border border-gray-100 shadow-sm rounded-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Datas & Curiosidades</h2>
+                <button id="dayfacts-refresh" class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold uppercase tracking-widest text-red-700">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>Atualizar</span>
+                </button>
+            </div>
+
+            <div id="dayfacts-list" class="space-y-3">
+                <div class="text-sm text-gray-600">Carregando…</div>
+            </div>
+
+            <div id="dayfacts-error" class="hidden mt-3 text-sm text-red-600"></div>
+        </div>
+
+        <!-- Atalhos úteis -->
+        <div class="bg-gray-50 border border-gray-100 rounded-sm p-6">
+            <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Atalhos</h3>
+            <ul class="space-y-2 text-sm">
+                <li><span class="font-semibold">Dica:</span> use “Escolher moedas” pra personalizar sua lista.</li>
+                <li><span class="font-semibold">Dica:</span> feriados são nacionais (BR).</li>
+            </ul>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tz = 'America/Sao_Paulo';
+    const TZ_STORAGE_KEY = 'oxira_consultas_timezones_v2';
+    const TZ_DEFAULTS = [];
+
+    const TZ_META = {
+        'UTC': { label: 'UTC' },
+        'America/Sao_Paulo': { label: 'Brasília' },
+        'America/New_York': { label: 'Nova York' },
+        'Europe/London': { label: 'Londres' },
+        'Europe/Lisbon': { label: 'Lisboa' },
+        'Europe/Madrid': { label: 'Madri' },
+        'Europe/Paris': { label: 'Paris' },
+        'Asia/Tokyo': { label: 'Tóquio' },
+    };
+
+    function fmtMoney(value, currency) {
+        try {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value);
+        } catch (e) {
+            return String(value);
+        }
+    }
+
+    function fmtNumber(value) {
+        return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 6 }).format(value);
+    }
+
+    function qs(id) {
+        return document.getElementById(id);
+    }
+
+    function refreshIcons() {
+        try {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function fmtISODateBR(iso) {
+        const s = String(iso || '').trim();
+        const parts = s.split('-');
+        if (parts.length !== 3) return s;
+        const y = parts[0];
+        const m = parts[1];
+        const d = parts[2];
+        if (!y || !m || !d) return s;
+        return `${d}/${m}/${y}`;
+    }
+
+    function loadTzSelection() {
+        try {
+            const raw = localStorage.getItem(TZ_STORAGE_KEY);
+            if (!raw) return [...TZ_DEFAULTS];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [...TZ_DEFAULTS];
+            const cleaned = parsed
+                .map(v => String(v || ''))
+                .filter(v => TZ_META[v]);
+            return cleaned.slice(0, 6);
+        } catch (e) {
+            return [...TZ_DEFAULTS];
+        }
+    }
+
+    function saveTzSelection(selection) {
+        try {
+            localStorage.setItem(TZ_STORAGE_KEY, JSON.stringify(selection));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function setTzPickerOpen(isOpen) {
+        const backdrop = qs('tz-picker-backdrop');
+        const panel = qs('tz-picker');
+        if (!backdrop || !panel) return;
+        if (isOpen) {
+            backdrop.classList.remove('hidden');
+            panel.classList.remove('hidden');
+            panel.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        } else {
+            backdrop.classList.add('hidden');
+            panel.classList.add('hidden');
+            panel.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function renderTzPicker() {
+        const list = qs('tz-picker-list');
+        if (!list) return;
+        const selection = loadTzSelection();
+        const options = Object.keys(TZ_META).filter(k => k !== 'America/Sao_Paulo');
+        list.innerHTML = options.map(key => {
+            const checked = selection.includes(key) ? 'checked' : '';
+            const label = TZ_META[key].label;
+            return `
+                <label class="flex items-center gap-3 border border-gray-200 rounded-sm p-3 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="tz-opt" value="${key}" ${checked} />
+                    <span class="flex-1">
+                        <div class="font-bold text-gray-900">${label}</div>
+                        <div class="text-xs text-gray-500">${key}</div>
+                    </span>
+                </label>
+            `;
+        }).join('');
+    }
+
+    function selectedTzFromPicker() {
+        const list = qs('tz-picker-list');
+        if (!list) return loadTzSelection();
+        const boxes = Array.from(list.querySelectorAll('input.tz-opt'));
+        const picked = boxes.filter(b => b.checked).map(b => String(b.value || ''));
+        const cleaned = picked.filter(v => TZ_META[v]);
+        return cleaned.slice(0, 6);
+    }
+
+    async function getJSON(url) {
+        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) {
+            const text = await resp.text().catch(() => '');
+            throw new Error('HTTP ' + resp.status + (text ? (': ' + text) : ''));
+        }
+        return await resp.json();
+    }
+
+    // Clock
+    const clockEl = qs('oxira-clock');
+    const worldClocksEl = qs('oxira-world-clocks');
+    function tickClock() {
+        const now = new Date();
+        const date = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: tz,
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        }).format(now);
+
+        const time = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        }).format(now);
+
+        clockEl.textContent = date + ' • ' + time;
+
+        const selection = loadTzSelection();
+        if (worldClocksEl) {
+            if (!selection.length) {
+                worldClocksEl.innerHTML = '';
+            } else {
+                worldClocksEl.innerHTML = selection.map(key => {
+                    const label = TZ_META[key] ? TZ_META[key].label : key;
+                    const t = new Intl.DateTimeFormat('pt-BR', {
+                        timeZone: key,
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }).format(now);
+                    return `<div><span class="font-semibold">${label}:</span> ${t}</div>`;
+                }).join('');
+            }
+        }
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // TZ picker (modal)
+    (function initTzPicker() {
+        // injeta modal aqui pra não poluir o HTML acima
+        const host = document.body;
+        if (!host) return;
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <div id="tz-picker-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+            <div id="tz-picker" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+                <div class="w-full max-w-2xl bg-white rounded-sm shadow-2xl border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-widest text-gray-500">Fusos</div>
+                            <div class="text-lg font-extrabold">Consultar outros horários</div>
+                        </div>
+                        <button id="tz-picker-close" class="text-gray-600 hover:text-black text-sm font-bold uppercase tracking-widest">Fechar</button>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-sm text-gray-600 mb-4">O relógio principal é sempre Brasília. Aqui você escolhe horários extras para aparecerem abaixo.</div>
+                        <div id="tz-picker-list" class="grid sm:grid-cols-2 gap-3"></div>
+                        <div class="mt-6 flex items-center justify-end gap-3">
+                            <button id="tz-picker-cancel" class="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-gray-200 hover:bg-gray-50">Cancelar</button>
+                            <button id="tz-picker-apply" class="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-black text-white hover:bg-gray-800">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        host.appendChild(wrap);
+
+        qs('tz-choose').addEventListener('click', function () {
+            renderTzPicker();
+            setTzPickerOpen(true);
+        });
+        qs('tz-picker-close').addEventListener('click', function () { setTzPickerOpen(false); });
+        qs('tz-picker-cancel').addEventListener('click', function () { setTzPickerOpen(false); });
+        qs('tz-picker-backdrop').addEventListener('click', function () { setTzPickerOpen(false); });
+        qs('tz-picker-apply').addEventListener('click', function () {
+            const picked = selectedTzFromPicker();
+            saveTzSelection(picked);
+            setTzPickerOpen(false);
+            tickClock();
+        });
+    })();
+
+    // FX (cards)
+    const FX_DEFAULT = ['USD', 'EUR', 'GBP'];
+    const FX_MAX_CARDS = 6;
+    const FX_STORAGE_KEY = 'oxira_consultas_fx_selection_v2';
+
+    const FX_CURRENCY_META = {
+        USD: { name: 'Dólar (EUA)', accent: 'bg-emerald-600', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', why: 'Viagem, compras no cartão internacional e serviços em dólar.' },
+        EUR: { name: 'Euro', accent: 'bg-blue-700', badge: 'bg-blue-50 text-blue-800 border-blue-200', why: 'Europa no radar: viagem, cartão e serviços em euro.' },
+        GBP: { name: 'Libra', accent: 'bg-purple-700', badge: 'bg-purple-50 text-purple-800 border-purple-200', why: 'Reino Unido e compras/serviços em libra.' },
+        ARS: { name: 'Peso (AR)', accent: 'bg-sky-600', badge: 'bg-sky-50 text-sky-800 border-sky-200', why: 'Planejamento de viagem e gastos na Argentina.' },
+        CAD: { name: 'Dólar (Canadá)', accent: 'bg-red-600', badge: 'bg-red-50 text-red-700 border-red-200', why: 'Viagem para o Canadá e custos em CAD.' },
+        AUD: { name: 'Dólar (Austrália)', accent: 'bg-amber-600', badge: 'bg-amber-50 text-amber-800 border-amber-200', why: 'Intercâmbio/viagem e despesas em AUD.' },
+        CHF: { name: 'Franco Suíço', accent: 'bg-zinc-900', badge: 'bg-zinc-50 text-zinc-800 border-zinc-200', why: 'Referência para finanças e viagens na Suíça.' },
+        JPY: { name: 'Iene', accent: 'bg-rose-600', badge: 'bg-rose-50 text-rose-800 border-rose-200', why: 'Japão no radar: viagem e compras em JPY.' },
+        MXN: { name: 'Peso (MX)', accent: 'bg-green-700', badge: 'bg-green-50 text-green-800 border-green-200', why: 'Viagem e custos no México.' },
+    };
+
+    const FX_OPTIONS = Object.keys(FX_CURRENCY_META);
+
+    function safePct(value) {
+        if (!Number.isFinite(value)) return null;
+        return value.toFixed(1).replace('.', ',');
+    }
+
+    function calcSeriesStats(series, daysShort) {
+        const rates = (Array.isArray(series) ? series : [])
+            .map(x => (x && typeof x.rate === 'number') ? x.rate : null)
+            .filter(x => typeof x === 'number');
+
+        if (!rates.length) return null;
+
+        const current = rates[rates.length - 1];
+        const lastShort = rates.slice(-daysShort);
+        const last30 = rates.slice(-30);
+
+        const avg = (arr) => arr.reduce((a, b) => a + b, 0) / Math.max(1, arr.length);
+        const mean30 = avg(last30);
+        const max7 = Math.max(...lastShort);
+        const min7 = Math.min(...lastShort);
+
+        // streak (últimos dias seguidos subindo/descendo)
+        let streak = 0;
+        let direction = 0;
+        for (let i = rates.length - 1; i >= 1; i--) {
+            const diff = rates[i] - rates[i - 1];
+            const dir = diff > 0 ? 1 : (diff < 0 ? -1 : 0);
+            if (dir === 0) break;
+            if (direction === 0) direction = dir;
+            if (dir !== direction) break;
+            streak += 1;
+        }
+
+        // volatilidade simples: média do |%| diário nos últimos 7
+        const pctMoves = [];
+        for (let i = rates.length - lastShort.length + 1; i < rates.length; i++) {
+            const prev = rates[i - 1];
+            const cur = rates[i];
+            if (!Number.isFinite(prev) || prev === 0) continue;
+            pctMoves.push(Math.abs((cur / prev - 1) * 100));
+        }
+        const meanAbsPct7 = pctMoves.length ? avg(pctMoves) : null;
+
+        // percentil no recorte de 30 dias
+        const sorted30 = [...last30].sort((a, b) => a - b);
+        const belowEq = sorted30.filter(v => v <= current).length;
+        const percentile30 = (belowEq / sorted30.length) * 100;
+
+        const aboveAvgPct = (mean30 && mean30 !== 0) ? ((current / mean30 - 1) * 100) : null;
+
+        return {
+            current,
+            mean30,
+            aboveAvgPct,
+            percentile30,
+            max7,
+            min7,
+            streak,
+            direction,
+            meanAbsPct7,
+        };
+    }
+
+    function pickByCode(code, options) {
+        const base = (code || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+        return options[base % options.length];
+    }
+
+    function fxSummaryHtml(code, meta, rate, date, stats) {
+        if (!Number.isFinite(rate) || !stats) {
+            return `
+                <div class="text-sm text-gray-700">Sem dados suficientes pra resumir agora. Atualiza daqui a pouco.</div>
+            `;
+        }
+
+        const price = fmtMoney(rate, 'BRL');
+        const mean30 = Number.isFinite(stats.mean30) ? fmtMoney(stats.mean30, 'BRL') : null;
+        const aboveAvgPct = safePct(stats.aboveAvgPct);
+        const perc = Number.isFinite(stats.percentile30) ? Math.round(stats.percentile30) : null;
+
+        const contextPick = pickByCode(code, [
+            `Nos últimos 7 dias, ficou entre ${fmtMoney(stats.min7, 'BRL')} e ${fmtMoney(stats.max7, 'BRL')}.`,
+            `Faixa dos últimos 7 dias: ${fmtMoney(stats.min7, 'BRL')} → ${fmtMoney(stats.max7, 'BRL')}.`,
+            `Na semana, oscilou de ${fmtMoney(stats.min7, 'BRL')} até ${fmtMoney(stats.max7, 'BRL')}.`,
+        ]);
+
+        const trend = (stats.streak >= 2)
+            ? (stats.direction > 0
+                ? pickByCode(code, [`Vem com ${stats.streak} dias seguidos de alta (curto prazo).`, `Engatou ${stats.streak} dias de alta em sequência.`, `${stats.streak} dias seguidos subindo, no recorte curto.`])
+                : pickByCode(code, [`Vem com ${stats.streak} dias seguidos de queda (curto prazo).`, `Emplacou ${stats.streak} dias de queda em sequência.`, `${stats.streak} dias seguidos caindo, no curto prazo.`]))
+            : pickByCode(code, [`Movimento recente mais “de lado”: sobe e desce sem sequência longa.`, `Curto prazo sem sequência forte: alterna variações.`, `Sem tendência curtinha muito clara: oscilando.`]);
+
+        const compare = (mean30 && aboveAvgPct !== null && perc !== null)
+            ? pickByCode(code, [
+                `Comparação simples: está ${aboveAvgPct}% em relação à média de 30 dias (${mean30}).`,
+                `Na régua de 30 dias: ${aboveAvgPct}% vs média (${mean30}).`,
+                `Contra a média de 30 dias (${mean30}), está em ${aboveAvgPct}%.`,
+            ]) + ` Percentil: mais alto que ~${perc}% dos dias do mês.`
+            : `Comparação do mês indisponível agora.`;
+
+        const guidance = (stats.aboveAvgPct !== null)
+            ? (stats.aboveAvgPct > 1.5
+                ? pickByCode(code, [`Para compra imediata, é um momento menos favorável que a média recente.`, `Se a ideia é comprar agora, está acima do “normal” do mês.`, `Pra quem vai comprar, está acima da média do mês — vale acompanhar mais um pouco.`])
+                : (stats.aboveAvgPct < -1.5
+                    ? pickByCode(code, [`Para compra, está mais perto do lado “favorável” do mês.`, `Se você precisava comprar, está abaixo da média recente.`, `Pra compra, está abaixo do padrão do mês (boa notícia).`])
+                    : pickByCode(code, [`Faixa bem próxima do “normal” do mês — bom pra decisões do dia a dia.`, `Bem perto da média do mês: cenário mais estável pra rotina.`, `Está na vizinhança da média do mês — sem grande distorção.`])))
+            : `Sem orientação agora.`;
+
+        const warn = (stats.meanAbsPct7 !== null)
+            ? (stats.meanAbsPct7 >= 1.2
+                ? pickByCode(code, [`Aviso: variações diárias recentes foram mais fortes (mercado sensível a notícia).`, `Aviso: últimos dias com mexidas maiores — atenção a notícias e eventos.`, `Aviso: volatilidade recente acima do normal, dá pra mudar rápido.`])
+                : pickByCode(code, [`Aviso: os últimos dias estão mais calmos (variações menores).`, `Aviso: curto prazo relativamente estável; ainda assim pode mudar com notícia.`, `Aviso: volatilidade recente moderada — sem picos grandes no recorte.`]))
+            : `Aviso: indisponível.`;
+
+        const opener = pickByCode(code, [
+            `${meta.name} hoje: ${price}`,
+            `Agora no radar (${code}): ${price}`,
+            `${code} em BRL agora: ${price}`,
+        ]);
+
+        return `
+            <div class="text-sm text-gray-800 font-semibold">${opener}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Contexto:</span> ${contextPick} ${trend}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Comparação:</span> ${compare}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Pra decidir:</span> ${guidance}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Aviso:</span> ${warn}</div>
+            <div class="mt-2 text-xs text-gray-500">Por que as pessoas olham isso: ${meta.why || 'viagem, compras e serviços em moeda estrangeira.'}</div>
+        `;
+    }
+
+    function fxNormalizeSelection(selection) {
+        const unique = [];
+        const add = (c) => {
+            const code = String(c || '').toUpperCase();
+            if (!FX_OPTIONS.includes(code)) return;
+            if (!unique.includes(code)) unique.push(code);
+        };
+        FX_DEFAULT.forEach(add);
+        (selection || []).forEach(add);
+        return unique.slice(0, FX_MAX_CARDS);
+    }
+
+    function loadFxSelection() {
+        try {
+            const raw = localStorage.getItem(FX_STORAGE_KEY);
+            if (!raw) return fxNormalizeSelection(FX_DEFAULT);
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [...FX_DEFAULT];
+            const cleaned = parsed
+                .map(v => (String(v || '').toUpperCase()))
+                .filter(v => FX_OPTIONS.includes(v));
+            return fxNormalizeSelection(cleaned);
+        } catch (e) {
+            return [...FX_DEFAULT];
+        }
+    }
+
+    function saveFxSelection(selection) {
+        try {
+            localStorage.setItem(FX_STORAGE_KEY, JSON.stringify(selection));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function setFxPickerOpen(isOpen) {
+        const backdrop = qs('fx-picker-backdrop');
+        const panel = qs('fx-picker');
+        if (!backdrop || !panel) return;
+
+        if (isOpen) {
+            backdrop.classList.remove('hidden');
+            panel.classList.remove('hidden');
+            panel.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        } else {
+            backdrop.classList.add('hidden');
+            panel.classList.add('hidden');
+            panel.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function renderFxPicker() {
+        const list = qs('fx-picker-list');
+        if (!list) return;
+        const selection = loadFxSelection();
+
+        list.innerHTML = FX_OPTIONS.map(code => {
+            const meta = FX_CURRENCY_META[code];
+            const checked = selection.includes(code) ? 'checked' : '';
+            const locked = FX_DEFAULT.includes(code);
+            const disabled = locked ? 'disabled' : '';
+            const lockedHint = locked ? '<span class="ml-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">fixo</span>' : '';
+            return `
+                <label class="flex items-center gap-3 border border-gray-200 rounded-sm p-3 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="fx-opt" value="${code}" ${checked} ${disabled} />
+                    <span class="w-2 h-8 ${meta.accent}"></span>
+                    <span class="flex-1">
+                        <div class="font-bold text-gray-900">${meta.name}</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-widest">${code} → BRL</div>
+                    </span>
+                    <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                    ${lockedHint}
+                </label>
+            `;
+        }).join('');
+    }
+
+    function selectedFromPicker() {
+        const list = qs('fx-picker-list');
+        if (!list) return loadFxSelection();
+        const boxes = Array.from(list.querySelectorAll('input.fx-opt'));
+        const picked = boxes.filter(b => b.checked).map(b => String(b.value || '').toUpperCase());
+        const cleaned = picked.filter(v => FX_OPTIONS.includes(v));
+        return fxNormalizeSelection(cleaned);
+    }
+
+    function renderFxSkeleton(codes) {
+        const container = qs('fx-cards');
+        if (!container) return;
+        container.innerHTML = codes.map(code => {
+            const meta = FX_CURRENCY_META[code] || { name: code, accent: 'bg-gray-400', badge: 'bg-gray-50 text-gray-700 border-gray-200' };
+            return `
+                <div class="border border-gray-100 rounded-sm overflow-hidden">
+                    <div class="h-1 ${meta.accent}"></div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">${code} → BRL</div>
+                                <div class="mt-1 font-extrabold text-lg text-gray-900">${meta.name}</div>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                        </div>
+                        <div class="mt-3 text-2xl font-extrabold">…</div>
+                        <div class="mt-1 text-xs text-gray-500"></div>
+                        <details class="mt-3 bg-gray-50 border border-gray-100 rounded-sm p-3 group">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-gray-500 [&::-webkit-details-marker]:hidden">
+                                <span>Resumo (IA)</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="mt-2 text-sm text-gray-700">Carregando…</div>
+                        </details>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        refreshIcons();
+    }
+
+    function renderFxCards(codes, results) {
+        const container = qs('fx-cards');
+        if (!container) return;
+
+        container.innerHTML = codes.map((code, idx) => {
+            const meta = FX_CURRENCY_META[code] || { name: code, accent: 'bg-gray-400', badge: 'bg-gray-50 text-gray-700 border-gray-200' };
+            const r = results[idx];
+            const rate = r && typeof r.rate === 'number' ? r.rate : null;
+            const date = r && r.date ? r.date : '';
+            const series = r && Array.isArray(r.series) ? r.series : [];
+            const price = (typeof rate === 'number') ? fmtMoney(rate, 'BRL') : '—';
+            const info = (typeof rate === 'number' && date) ? `Base: 1 ${code} • Data: ${date}` : '';
+            const stats = calcSeriesStats(series, 7);
+            const summaryHtml = fxSummaryHtml(code, meta, (typeof rate === 'number') ? rate : NaN, date, stats);
+
+            return `
+                <div class="border border-gray-100 rounded-sm overflow-hidden">
+                    <div class="h-1 ${meta.accent}"></div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">${code} → BRL</div>
+                                <div class="mt-1 font-extrabold text-lg text-gray-900">${meta.name}</div>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                        </div>
+                        <div class="mt-3 text-2xl font-extrabold">${price}</div>
+                        <div class="mt-1 text-xs text-gray-500">${info}</div>
+                        <details class="mt-3 bg-gray-50 border border-gray-100 rounded-sm p-3 group">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-gray-500 [&::-webkit-details-marker]:hidden">
+                                <span>Resumo (IA)</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="mt-2 text-sm text-gray-700">${summaryHtml}</div>
+                        </details>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        refreshIcons();
+    }
+
+    async function loadFxCards() {
+        qs('fx-error').classList.add('hidden');
+        const selection = fxNormalizeSelection(loadFxSelection());
+        renderFxSkeleton(selection);
+
+        const requests = selection.map(code =>
+            getJSON(`/api/consultas/fx/range/?base=${encodeURIComponent(code)}&days=30`)
+        );
+
+        const settled = await Promise.allSettled(requests);
+
+        const results = settled.map((s, idx) => {
+            if (s.status !== 'fulfilled') return { code: selection[idx], rate: null, date: '' };
+            const data = s.value;
+            const current = data && data.current ? data.current : null;
+            const rate = current && typeof current.rate === 'number' ? current.rate : null;
+            const date = current && current.date ? current.date : '';
+            return {
+                code: selection[idx],
+                rate: (typeof rate === 'number') ? rate : null,
+                date,
+                series: Array.isArray(data && data.series) ? data.series : [],
+            };
+        });
+
+        const okCount = results.filter(r => typeof r.rate === 'number').length;
+        if (!okCount) {
+            qs('fx-error').textContent = 'Não deu para carregar as cotações agora. Tenta atualizar daqui a pouco.';
+            qs('fx-error').classList.remove('hidden');
+        }
+
+        renderFxCards(selection, results);
+    }
+
+    qs('fx-refresh').addEventListener('click', function () {
+        loadFxCards();
+    });
+
+    // FX picker events
+    qs('fx-choose').addEventListener('click', function () {
+        renderFxPicker();
+        setFxPickerOpen(true);
+    });
+
+    qs('fx-picker-close').addEventListener('click', function () {
+        setFxPickerOpen(false);
+    });
+    qs('fx-picker-cancel').addEventListener('click', function () {
+        setFxPickerOpen(false);
+    });
+    qs('fx-picker-backdrop').addEventListener('click', function () {
+        setFxPickerOpen(false);
+    });
+    qs('fx-picker-apply').addEventListener('click', function () {
+        const picked = selectedFromPicker();
+        const finalPick = fxNormalizeSelection(picked.length ? picked : FX_DEFAULT);
+        saveFxSelection(finalPick);
+        setFxPickerOpen(false);
+        loadFxCards();
+    });
+
+    // Crypto (cards)
+    const CRYPTO_DEFAULT = ['BTC', 'ETH'];
+    const CRYPTO_MAX_CARDS = 6;
+    const CRYPTO_STORAGE_KEY = 'oxira_consultas_crypto_selection_v2';
+
+    const CRYPTO_META = {
+        BTC: { id: 'bitcoin', name: 'Bitcoin', accent: 'bg-amber-500', badge: 'bg-amber-50 text-amber-800 border-amber-200' },
+        ETH: { id: 'ethereum', name: 'Ethereum', accent: 'bg-indigo-600', badge: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+        SOL: { id: 'solana', name: 'Solana', accent: 'bg-violet-600', badge: 'bg-violet-50 text-violet-800 border-violet-200' },
+        XRP: { id: 'ripple', name: 'XRP', accent: 'bg-sky-700', badge: 'bg-sky-50 text-sky-800 border-sky-200' },
+        ADA: { id: 'cardano', name: 'Cardano', accent: 'bg-blue-900', badge: 'bg-blue-50 text-blue-900 border-blue-200' },
+        DOGE: { id: 'dogecoin', name: 'Dogecoin', accent: 'bg-yellow-600', badge: 'bg-yellow-50 text-yellow-800 border-yellow-200' },
+    };
+    const CRYPTO_OPTIONS = Object.keys(CRYPTO_META);
+
+    function cryptoNormalizeSelection(selection) {
+        const unique = [];
+        const add = (c) => {
+            const code = String(c || '').toUpperCase();
+            if (!CRYPTO_OPTIONS.includes(code)) return;
+            if (!unique.includes(code)) unique.push(code);
+        };
+        CRYPTO_DEFAULT.forEach(add);
+        (selection || []).forEach(add);
+        return unique.slice(0, CRYPTO_MAX_CARDS);
+    }
+
+    function loadCryptoSelection() {
+        try {
+            const raw = localStorage.getItem(CRYPTO_STORAGE_KEY);
+            if (!raw) return cryptoNormalizeSelection(CRYPTO_DEFAULT);
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return cryptoNormalizeSelection(CRYPTO_DEFAULT);
+            return cryptoNormalizeSelection(parsed);
+        } catch (e) {
+            return cryptoNormalizeSelection(CRYPTO_DEFAULT);
+        }
+    }
+
+    function saveCryptoSelection(selection) {
+        try {
+            localStorage.setItem(CRYPTO_STORAGE_KEY, JSON.stringify(selection));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function setCryptoPickerOpen(isOpen) {
+        const backdrop = qs('crypto-picker-backdrop');
+        const panel = qs('crypto-picker');
+        if (!backdrop || !panel) return;
+        if (isOpen) {
+            backdrop.classList.remove('hidden');
+            panel.classList.remove('hidden');
+            panel.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        } else {
+            backdrop.classList.add('hidden');
+            panel.classList.add('hidden');
+            panel.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function renderCryptoPicker() {
+        const list = qs('crypto-picker-list');
+        if (!list) return;
+        const selection = loadCryptoSelection();
+        list.innerHTML = CRYPTO_OPTIONS.map(code => {
+            const meta = CRYPTO_META[code];
+            const checked = selection.includes(code) ? 'checked' : '';
+            const locked = CRYPTO_DEFAULT.includes(code);
+            const disabled = locked ? 'disabled' : '';
+            const lockedHint = locked ? '<span class="ml-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">fixo</span>' : '';
+            return `
+                <label class="flex items-center gap-3 border border-gray-200 rounded-sm p-3 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="crypto-opt" value="${code}" ${checked} ${disabled} />
+                    <span class="w-2 h-8 ${meta.accent}"></span>
+                    <span class="flex-1">
+                        <div class="font-bold text-gray-900">${meta.name}</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-widest">${code}</div>
+                    </span>
+                    <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                    ${lockedHint}
+                </label>
+            `;
+        }).join('');
+    }
+
+    function selectedCryptoFromPicker() {
+        const list = qs('crypto-picker-list');
+        if (!list) return loadCryptoSelection();
+        const boxes = Array.from(list.querySelectorAll('input.crypto-opt'));
+        const picked = boxes.filter(b => b.checked).map(b => String(b.value || '').toUpperCase());
+        return cryptoNormalizeSelection(picked);
+    }
+
+    function cryptoSummaryOne(code, name, brl, change24h) {
+        const price = Number.isFinite(brl) ? fmtMoney(brl, 'BRL') : '—';
+        const ch = Number.isFinite(change24h) ? change24h : null;
+        const chTxt = (ch === null) ? 'variação 24h indisponível' : `${ch.toFixed(2).replace('.', ',')}%`;
+        const lead = pickByCode(code, [
+            `${name} agora: ${price}`,
+            `No radar (${code}): ${price}`,
+            `${code} agora: ${price}`,
+        ]);
+        return `${lead}. 24h: ${chTxt}. Sem histórico suficiente pra comparar; tenta atualizar daqui a pouco.`;
+    }
+
+    function calcCryptoStats(series, daysShort) {
+        const prices = (Array.isArray(series) ? series : [])
+            .map(x => (x && typeof x.price === 'number') ? x.price : null)
+            .filter(x => typeof x === 'number');
+        if (!prices.length) return null;
+
+        const current = prices[prices.length - 1];
+        const lastShort = prices.slice(-daysShort);
+        const last30 = prices.slice(-30);
+        const avg = (arr) => arr.reduce((a, b) => a + b, 0) / Math.max(1, arr.length);
+        const mean30 = avg(last30);
+        const max7 = Math.max(...lastShort);
+        const min7 = Math.min(...lastShort);
+
+        let streak = 0;
+        let direction = 0;
+        for (let i = prices.length - 1; i >= 1; i--) {
+            const diff = prices[i] - prices[i - 1];
+            const dir = diff > 0 ? 1 : (diff < 0 ? -1 : 0);
+            if (dir === 0) break;
+            if (direction === 0) direction = dir;
+            if (dir !== direction) break;
+            streak += 1;
+        }
+
+        const sorted30 = [...last30].sort((a, b) => a - b);
+        const belowEq = sorted30.filter(v => v <= current).length;
+        const percentile30 = (belowEq / sorted30.length) * 100;
+        const aboveAvgPct = (mean30 && mean30 !== 0) ? ((current / mean30 - 1) * 100) : null;
+
+        return { current, mean30, aboveAvgPct, percentile30, max7, min7, streak, direction };
+    }
+
+    function cryptoSummaryHtml(code, meta, brlNow, change24h, stats) {
+        if (!Number.isFinite(brlNow) || !stats) {
+            return `
+                <div class="text-sm text-gray-700">Sem dados suficientes pra resumir agora. Atualiza daqui a pouco.</div>
+            `;
+        }
+
+        const price = fmtMoney(brlNow, 'BRL');
+        const mean30 = Number.isFinite(stats.mean30) ? fmtMoney(stats.mean30, 'BRL') : null;
+        const aboveAvgPct = safePct(stats.aboveAvgPct);
+        const perc = Number.isFinite(stats.percentile30) ? Math.round(stats.percentile30) : null;
+        const ch = Number.isFinite(change24h) ? change24h : null;
+
+        const opener = pickByCode(code, [
+            `${meta.name} agora: ${price}`,
+            `Preço atual (${code}): ${price}`,
+            `${code} em BRL agora: ${price}`,
+        ]);
+
+        const context = pickByCode(code, [
+            `Nos últimos 7 dias, ficou entre ${fmtMoney(stats.min7, 'BRL')} e ${fmtMoney(stats.max7, 'BRL')}.`,
+            `Na semana, oscilou de ${fmtMoney(stats.min7, 'BRL')} até ${fmtMoney(stats.max7, 'BRL')}.`,
+            `Faixa dos últimos 7 dias: ${fmtMoney(stats.min7, 'BRL')} → ${fmtMoney(stats.max7, 'BRL')}.`,
+        ]);
+
+        const trend = (stats.streak >= 2)
+            ? (stats.direction > 0
+                ? pickByCode(code, [`Engatou ${stats.streak} dias seguidos de alta (curto prazo).`, `${stats.streak} dias subindo em sequência, no recorte curto.`, `Sequência curta de alta: ${stats.streak} dias.`])
+                : pickByCode(code, [`Engatou ${stats.streak} dias seguidos de queda (curto prazo).`, `${stats.streak} dias caindo em sequência, no recorte curto.`, `Sequência curta de queda: ${stats.streak} dias.`]))
+            : pickByCode(code, [`Curto prazo sem sequência forte: alternando variações.`, `Movimento recente “misto”: sem sequência longa.`, `Oscilando sem uma sequência clara no curto prazo.`]);
+
+        const compare = (mean30 && aboveAvgPct !== null && perc !== null)
+            ? `Está ${aboveAvgPct}% vs média de 30 dias (${mean30}) e acima de ~${perc}% dos dias do mês.`
+            : `Comparação do mês indisponível agora.`;
+
+        const decision = (stats.aboveAvgPct !== null)
+            ? (stats.aboveAvgPct > 2
+                ? pickByCode(code, [`Pra quem vai comprar agora, está acima do padrão recente; vale acompanhar a oscilação.`, `Compra imediata fica menos “confortável” que a média do mês.`, `Se a intenção é entrada agora, está acima da média recente (atenção).`])
+                : (stats.aboveAvgPct < -2
+                    ? pickByCode(code, [`Está abaixo do padrão do mês; pra compra, é um ponto relativamente melhor.`, `Se você precisava comprar, está abaixo da média recente.`, `Pra compra, está mais baixo que o normal do mês (no recorte).`])
+                    : pickByCode(code, [`Bem perto do “normal” do mês; bom pra quem só quer referência.`, `Na vizinhança da média do mês: cenário mais neutro.`, `Está bem próximo da média do mês; útil pra monitorar sem ansiedade.`])))
+            : `Sem orientação agora.`;
+
+        const warn = pickByCode(code, [
+            `Aviso: cripto costuma reagir rápido a notícia e liquidez; use esse número como referência, não como promessa.`,
+            `Aviso: volatilidade é parte do jogo; compare com a média do mês e evite decidir só pelo “agora”.`,
+            `Aviso: movimentos podem acelerar; bom ter um preço-alvo e disciplina.`
+        ]);
+
+        const chTxt = (ch === null) ? 'indisponível' : `${ch.toFixed(2).replace('.', ',')}%`;
+        const why = pickByCode(code, [
+            meta.name === 'Bitcoin' ? 'Muita gente usa como “termômetro” do mercado cripto.' :
+            meta.name === 'Ethereum' ? 'Geral olha por causa do ecossistema (apps, DeFi, NFTs) e porque mexe no mercado.' :
+            'Geral acompanha por volatilidade e oportunidade, mas sempre com risco.'
+        ]);
+
+        return `
+            <div class="text-sm text-gray-800 font-semibold">${opener}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Contexto:</span> ${context} ${trend} (24h: ${chTxt}).</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Comparação:</span> ${compare}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Pra decidir:</span> ${decision}</div>
+            <div class="mt-2 text-sm text-gray-700"><span class="font-semibold">Aviso:</span> ${warn}</div>
+            <div class="mt-2 text-xs text-gray-500">Por que as pessoas olham isso: ${why}</div>
+        `;
+    }
+
+    function renderCryptoSkeleton(codes) {
+        const container = qs('crypto-cards');
+        if (!container) return;
+        container.innerHTML = codes.map(code => {
+            const meta = CRYPTO_META[code] || { name: code, accent: 'bg-gray-400', badge: 'bg-gray-50 text-gray-700 border-gray-200' };
+            return `
+                <div class="border border-gray-100 rounded-sm overflow-hidden">
+                    <div class="h-1 ${meta.accent}"></div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Cripto</div>
+                                <div class="mt-1 font-extrabold text-lg text-gray-900">${meta.name}</div>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                        </div>
+                        <div class="mt-3 text-2xl font-extrabold">…</div>
+                        <div class="mt-1 text-xs text-gray-500"></div>
+                        <details class="mt-3 bg-gray-50 border border-gray-100 rounded-sm p-3 group">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-gray-500 [&::-webkit-details-marker]:hidden">
+                                <span>Resumo (IA)</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="mt-2 text-sm text-gray-700">Carregando…</div>
+                        </details>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        refreshIcons();
+    }
+
+    function renderCryptoCards(codes, data, chartsById) {
+        const container = qs('crypto-cards');
+        if (!container) return;
+
+        container.innerHTML = codes.map(code => {
+            const meta = CRYPTO_META[code];
+            const id = meta ? meta.id : null;
+            const item = (id && data && data[id]) ? data[id] : null;
+            const brl = item && typeof item.brl === 'number' ? item.brl : NaN;
+            const usd = item && typeof item.usd === 'number' ? item.usd : NaN;
+            const ch = item && typeof item.brl_24h_change === 'number' ? item.brl_24h_change : NaN;
+
+            const chartSeries = (id && chartsById && chartsById[id] && Array.isArray(chartsById[id].series)) ? chartsById[id].series : [];
+            const stats = calcCryptoStats(chartSeries, 7);
+
+            const brlTxt = Number.isFinite(brl) ? fmtMoney(brl, 'BRL') : '—';
+            const usdTxt = Number.isFinite(usd) ? fmtMoney(usd, 'USD') : '';
+            const chTxt = Number.isFinite(ch) ? `Variação 24h: ${ch.toFixed(2).replace('.', ',')}%` : 'Variação 24h: —';
+            const summaryHtml = cryptoSummaryHtml(code, meta, brl, ch, stats);
+
+            return `
+                <div class="border border-gray-100 rounded-sm overflow-hidden">
+                    <div class="h-1 ${meta.accent}"></div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">${code}</div>
+                                <div class="mt-1 font-extrabold text-lg text-gray-900">${meta.name}</div>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest px-2 py-1 border rounded ${meta.badge}">${code}</span>
+                        </div>
+                        <div class="mt-3 text-2xl font-extrabold">${brlTxt}</div>
+                        <div class="mt-1 text-sm text-gray-600">${usdTxt}</div>
+                        <div class="mt-1 text-xs text-gray-500">${chTxt}</div>
+                        <details class="mt-3 bg-gray-50 border border-gray-100 rounded-sm p-3 group">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-widest text-gray-500 [&::-webkit-details-marker]:hidden">
+                                <span>Resumo (IA)</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="mt-2 text-sm text-gray-700">${summaryHtml}</div>
+                        </details>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        refreshIcons();
+    }
+
+    async function loadCrypto() {
+        qs('crypto-error').classList.add('hidden');
+        const selection = cryptoNormalizeSelection(loadCryptoSelection());
+        renderCryptoSkeleton(selection);
+
+        const ids = selection.map(c => CRYPTO_META[c].id).join(',');
+        try {
+            const data = await getJSON(`/api/consultas/crypto/prices/?ids=${encodeURIComponent(ids)}`);
+
+            const chartReqs = selection.map(c => {
+                const id = CRYPTO_META[c].id;
+                return getJSON(`/api/consultas/crypto/chart/?id=${encodeURIComponent(id)}&days=30`);
+            });
+
+            const chartSettled = await Promise.allSettled(chartReqs);
+            const chartsById = {};
+            chartSettled.forEach((s, idx) => {
+                const id = CRYPTO_META[selection[idx]].id;
+                if (s.status === 'fulfilled' && s.value && s.value.ok) {
+                    chartsById[id] = s.value;
+                } else {
+                    chartsById[id] = { ok: false, series: [] };
+                }
+            });
+
+            renderCryptoCards(selection, data, chartsById);
+        } catch (err) {
+            const msg = (err && err.message) ? err.message : 'Falha ao carregar cripto.';
+            qs('crypto-error').textContent = 'Não deu para carregar agora. ' + msg;
+            qs('crypto-error').classList.remove('hidden');
+            renderCryptoCards(selection, {}, {});
+        }
+    }
+
+    qs('crypto-refresh').addEventListener('click', function () {
+        loadCrypto();
+    });
+
+    qs('crypto-choose').addEventListener('click', function () {
+        renderCryptoPicker();
+        setCryptoPickerOpen(true);
+    });
+    qs('crypto-picker-close').addEventListener('click', function () {
+        setCryptoPickerOpen(false);
+    });
+    qs('crypto-picker-cancel').addEventListener('click', function () {
+        setCryptoPickerOpen(false);
+    });
+    qs('crypto-picker-backdrop').addEventListener('click', function () {
+        setCryptoPickerOpen(false);
+    });
+    qs('crypto-picker-apply').addEventListener('click', function () {
+        const picked = selectedCryptoFromPicker();
+        const finalPick = cryptoNormalizeSelection(picked.length ? picked : CRYPTO_DEFAULT);
+        saveCryptoSelection(finalPick);
+        setCryptoPickerOpen(false);
+        loadCrypto();
+    });
+
+    // Holidays
+    async function loadHolidays() {
+        qs('holidays-error').classList.add('hidden');
+        qs('holidays-today').textContent = 'Carregando…';
+        qs('holidays-next').textContent = 'Carregando…';
+        qs('holidays-summary').textContent = 'Carregando…';
+
+        try {
+            const data = await getJSON('/api/consultas/holidays/today/');
+            const today = data && data.today ? data.today : [];
+            const next = data && data.next ? data.next : null;
+
+            if (Array.isArray(today) && today.length) {
+                qs('holidays-today').innerHTML = today.map(h => {
+                    const scope = h.global ? 'Nacional' : 'Regional';
+                    return `<div class="border border-gray-100 rounded-sm p-3 mb-2"><div class="font-semibold">${h.localName}</div><div class="text-xs text-gray-500">${fmtISODateBR(h.date)} • ${scope}</div></div>`;
+                }).join('');
+            } else {
+                qs('holidays-today').textContent = 'Sem feriado nacional hoje.';
+            }
+
+            if (next && next.date) {
+                qs('holidays-next').textContent = `${fmtISODateBR(next.date)} — ${next.localName}`;
+            } else {
+                qs('holidays-next').textContent = 'Indisponível no momento.';
+            }
+
+            if (Array.isArray(today) && today.length) {
+                qs('holidays-summary').textContent = 'Hoje é dia de ritmo diferente: se der, pisa mais leve e aproveita.';
+            } else if (next && next.date && next.localName) {
+                qs('holidays-summary').textContent = `Sem feriado hoje. Mas já dá pra se organizar: o próximo é ${next.localName} (${fmtISODateBR(next.date)}).`;
+            } else {
+                qs('holidays-summary').textContent = 'Sem resumo agora — mas seguimos acompanhando.';
+            }
+        } catch (err) {
+            const msg = (err && err.message) ? err.message : 'Falha ao carregar feriados.';
+            qs('holidays-error').textContent = 'Não deu para carregar agora. ' + msg;
+            qs('holidays-error').classList.remove('hidden');
+            qs('holidays-today').textContent = '—';
+            qs('holidays-next').textContent = '—';
+            qs('holidays-summary').textContent = 'Sem resumo por enquanto — tenta atualizar daqui a pouco.';
+        }
+    }
+
+    qs('holidays-refresh').addEventListener('click', function () {
+        loadHolidays();
+    });
+
+    // Datas & Curiosidades
+    async function loadDayFacts() {
+        qs('dayfacts-error').classList.add('hidden');
+        const list = qs('dayfacts-list');
+        list.innerHTML = '<div class="text-sm text-gray-600">Carregando…</div>';
+
+        try {
+            const data = await getJSON('/api/consultas/dayfacts/today/');
+            const items = (data && Array.isArray(data.items)) ? data.items : [];
+            if (!items.length) {
+                list.innerHTML = '<div class="text-sm text-gray-600">Sem datas cadastradas para hoje (ainda). Amanhã tem mais.</div>';
+                return;
+            }
+
+            list.innerHTML = `
+                <div class="space-y-2">
+                    ${items.map(it => `
+                        <div class="border border-gray-100 rounded-sm p-3">
+                            <div class="text-sm font-semibold text-gray-900">${it.title || ''}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } catch (err) {
+            const msg = (err && err.message) ? err.message : 'Falha ao carregar.';
+            qs('dayfacts-error').textContent = 'Não deu para carregar agora. ' + msg;
+            qs('dayfacts-error').classList.remove('hidden');
+            list.innerHTML = '<div class="text-sm text-gray-600">—</div>';
+        }
+    }
+
+    qs('dayfacts-refresh').addEventListener('click', function () {
+        loadDayFacts();
+    });
+
+    // Initial load
+    loadFxCards();
+    loadCrypto();
+    loadHolidays();
+    loadDayFacts();
+})();
+</script>
+{% endblock %}

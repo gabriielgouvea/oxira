@@ -30,6 +30,12 @@
                             </p>
                         {% endif %}
 
+            {% if post.image %}
+                <div class="mt-6 overflow-hidden rounded-sm bg-gray-100 aspect-video">
+                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                </div>
+            {% endif %}
+
             <div class="mt-6 flex flex-wrap items-center text-sm text-gray-500 gap-y-2">
                 <div class="flex items-center">
                     {% if author_profile and author_profile.avatar %}
@@ -61,7 +67,7 @@
             <!-- Ad Space: In-Content (After 1st paragraph simulation) -->
             <div class="my-8 w-full bg-gray-50 p-4 border-l-4 border-black">
                 <p class="text-xs font-bold text-gray-400 uppercase mb-2">Publicidade</p>
-                <div class="h-32 bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                <div class="w-full max-w-[336px] mx-auto overflow-hidden bg-gray-200 flex items-center justify-center text-gray-400 text-sm aspect-[336/280]">
                     Espaço reservado para Google Ads (In-Article)
                 </div>
             </div>

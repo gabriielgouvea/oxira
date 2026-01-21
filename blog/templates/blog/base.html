@@ -14,6 +14,13 @@
         .sidebar-closed { transform: translateX(-100%); }
         .backdrop-open { display: block; }
         .backdrop-closed { display: none; }
+
+        /* Segurança contra overflow no mobile (ads/embeds/conteúdo rico) */
+        img, video, iframe, embed, object { max-width: 100%; }
+        img { height: auto; }
+        .prose, article { overflow-wrap: anywhere; word-break: break-word; }
+        ins.adsbygoogle { display: block; max-width: 100%; overflow: hidden; }
+        ins.adsbygoogle iframe { max-width: 100%; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 flex flex-col min-h-screen overflow-x-hidden">
@@ -41,6 +48,7 @@
             <div class="space-y-3">
                 <a href="/" class="block text-lg font-bold text-gray-900 hover:text-red-600 transition">Home</a>
                 <a href="#ultimas" class="block text-lg font-bold text-gray-900 hover:text-red-600 transition">Últimas Notícias</a>
+                <a href="{% url 'consultas' %}" class="block text-lg font-bold text-gray-900 hover:text-red-600 transition">Consultas</a>
             </div>
             
             <hr class="border-gray-100">
@@ -104,7 +112,7 @@
     <div class="bg-gray-100 py-4 border-b border-gray-200">
         <div class="container mx-auto px-4 flex justify-center">
             <!-- Mobile Ad (320x50) -->
-            <div class="md:hidden w-[320px] h-[50px] bg-gray-300 flex items-center justify-center border border-gray-400">
+            <div class="md:hidden w-full max-w-[320px] h-[50px] bg-gray-300 flex items-center justify-center border border-gray-400">
                 <span class="text-xs text-gray-500 uppercase tracking-widest">Publicidade (Mobile)</span>
             </div>
             <!-- Desktop Ad (728x90) -->

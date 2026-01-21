@@ -91,7 +91,13 @@
       {% for post in posts %}
         <article class="bg-white border border-gray-100 shadow-sm rounded-sm overflow-hidden group">
           <a href="{% url 'post_detail' post.slug %}" class="block">
-            <div class="bg-gray-200 aspect-video w-full group-hover:scale-[1.02] transition duration-500"></div>
+            {% if post.image %}
+              <div class="bg-gray-100 aspect-video w-full overflow-hidden">
+                <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover group-hover:scale-[1.02] transition duration-500" loading="lazy" />
+              </div>
+            {% else %}
+              <div class="bg-gray-200 aspect-video w-full group-hover:scale-[1.02] transition duration-500"></div>
+            {% endif %}
           </a>
           <div class="p-5">
             <div class="text-xs font-bold uppercase tracking-widest mb-2 text-gray-500">

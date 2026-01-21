@@ -15,8 +15,13 @@
         <article class="lg:col-span-8 group cursor-pointer">
             {% with featured=posts.0 %}
             <div class="relative overflow-hidden mb-4 rounded-sm">
-                <!-- Placeholder Image (In real app, use post.image) -->
-                <div class="bg-gray-200 aspect-video w-full object-cover group-hover:scale-105 transition duration-700 ease-in-out"></div>
+                {% if featured.image %}
+                    <div class="bg-gray-100 aspect-video w-full overflow-hidden">
+                        <img src="{{ featured.image.url }}" alt="{{ featured.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out" loading="lazy" />
+                    </div>
+                {% else %}
+                    <div class="bg-gray-200 aspect-video w-full object-cover group-hover:scale-105 transition duration-700 ease-in-out"></div>
+                {% endif %}
                 <div class="absolute bottom-0 left-0 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-widest">
                     {{ featured.category.name|default:"Geral" }}
                 </div>
@@ -42,8 +47,8 @@
         </article>
 
         <!-- Ad Space: Middle Mobile Only -->
-        <div class="lg:hidden col-span-12 flex justify-center py-6 border-t border-b border-gray-100 my-4">
-            <div class="w-[300px] h-[250px] bg-gray-200 flex items-center justify-center border border-gray-300">
+        <div class="lg:hidden flex justify-center py-6 border-t border-b border-gray-100 my-4">
+            <div class="w-full max-w-[300px] h-[250px] bg-gray-200 flex items-center justify-center border border-gray-300">
                 <span class="text-xs text-gray-400 uppercase">Publicidade</span>
             </div>
         </div>
@@ -68,12 +73,21 @@
                             {% else %}text-gray-500{% endif %}">
                             {{ post.category.name }}
                         </div>
-                        <h4 class="text-lg font-bold leading-tight group-hover:text-gray-600 transition">
-                            <a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a>
-                        </h4>
-                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
-                        </div>
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3">
+                            <div class="w-24 h-16 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-lg font-bold leading-tight group-hover:text-gray-600 transition line-clamp-3">
+                                    {{ post.title }}
+                                </h4>
+                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
+                                </div>
+                            </div>
+                        </a>
                     </article>
                     {% endfor %}
                 </div>
@@ -100,11 +114,20 @@
                 {% for post in posts %}
                     {% if 'empreendedorismo' in post.category.slug %}
                     <article class="mb-6">
-                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
-                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
+                            <div class="w-24 h-16 md:w-full md:aspect-video md:h-auto rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-lg font-bold leading-snug hover:underline line-clamp-3">{{ post.title }}</h4>
+                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                            </div>
+                        </a>
                     </article>
                     {% endif %}
                 {% endfor %}
@@ -116,11 +139,20 @@
                 {% for post in posts %}
                     {% if 'esportes' in post.category.slug %}
                     <article class="mb-6">
-                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
-                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
+                            <div class="w-24 h-16 md:w-full md:aspect-video md:h-auto rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-lg font-bold leading-snug hover:underline line-clamp-3">{{ post.title }}</h4>
+                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
+                            </div>
+                        </a>
                     </article>
                     {% endif %}
                 {% endfor %}
