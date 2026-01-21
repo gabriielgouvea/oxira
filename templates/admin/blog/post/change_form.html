@@ -1,0 +1,173 @@
+{% extends "admin/change_form.html" %}
+
+{% block breadcrumbs %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    /* Página do Post: limpa o topo (breadcrumbs) e dá um ar mais "editor" */
+    body.model-post.change-form .content-header,
+    body.model-post.change-form .breadcrumb,
+    body.model-post.change-form .breadcrumbs {
+      display: none !important;
+    }
+
+    body.model-post.change-form #content {
+      padding-top: 14px;
+    }
+
+    .oxira-editor-tip {
+      border: 1px solid rgba(0,0,0,.08);
+      background: rgba(220,38,38,.04);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .oxira-editor-tip strong { font-weight: 900; }
+    .oxira-editor-tip .muted { color: rgba(107,114,128,.95); }
+
+    /* Tooltip "?" (mesmo estilo do dashboard) */
+    .oxira-help {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 114, 128, .35);
+      color: rgba(107, 114, 128, .95);
+      font-weight: 900;
+      font-size: 10px;
+      line-height: 1;
+      cursor: help;
+      user-select: none;
+      position: relative;
+      top: -1px;
+    }
+
+    .oxira-help:hover {
+      border-color: rgba(220, 38, 38, .55);
+      color: rgba(220, 38, 38, 1);
+      background: rgba(220, 38, 38, .08);
+    }
+
+    .oxira-help[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translate(-50%, -100%);
+      background: rgba(17, 24, 39, .96);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0;
+      text-transform: none;
+      width: max-content;
+      max-width: 360px;
+      white-space: normal;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease;
+      z-index: 50;
+    }
+
+    .oxira-help[data-tip]::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translate(-50%, -2px);
+      border: 6px solid transparent;
+      border-top-color: rgba(17, 24, 39, .96);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease;
+      z-index: 51;
+    }
+
+    .oxira-help:hover::after,
+    .oxira-help:hover::before {
+      opacity: 1;
+    }
+
+    /* Deixa labels mais “editor” */
+    body.model-post.change-form label {
+      font-weight: 800;
+    }
+  </style>
+{% endblock %}
+
+{% block form_top %}
+  <div class="oxira-editor-tip">
+    <strong>Hora de escrever.</strong>
+    <span class="muted">Dica rápida: título chama clique, subtítulo segura o leitor e conteúdo entrega a promessa (sem enrolação, claro).</span>
+  </div>
+  {{ block.super }}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  <script>
+    (function () {
+      const tips = {
+        title: "Aqui vai o seu TÍTULO (o grandão). Aparece na home/lista e lá em cima na matéria. Ex: \"IA no Varejo: como as lojas estão virando laboratório\". Capricha: é a primeira coisa que o povo vê.",
+        subtitle: "SUBTÍTULO é o teaser: uma frase curtinha pra dar contexto e vontade de clicar. Ex: \"Do caixa ao estoque, a tecnologia está mudando tudo — e rápido.\"",
+        slug: "SLUG é o endereço da matéria (URL). Ele vira o link. Ex: \"ia-no-varejo-tecnologia-personalizando\". Dica: sem acento, sem espaços, tudo com hífen.",
+        author: "AUTOR é quem assina a matéria. Vai aparecer perto do título e também na página do perfil do autor. Normalmente já vem como você (e só admin consegue trocar).",
+        content: "CONTEÚDO é o texto da matéria (o que a pessoa vai ler). Aqui vale: subtítulo, intertítulos, links e imagens. Pense: \"começo forte\", \"meio com dados\", \"final com conclusão\".",
+        image: "IMAGEM DESTACADA é a capa da matéria. Usamos ela pra ilustrar a chamada na home/listas (quando estiver ativado). Ex: foto do tema, gráfico, ou imagem de agência.",
+        category: "CATEGORIA é o canal da matéria (Esportes, Política...). Ela aparece como etiqueta perto do título e organiza o site.",
+        status: "STATUS controla se a matéria aparece no site. \n• Rascunho: só você vê.\n• Em revisão: pra ajustar antes de publicar.\n• Publicado: no ar.\n• Agendado: publica na data/hora escolhida.",
+        published_date: "DATA DE PUBLICAÇÃO é quando a matéria deve entrar no ar (ou aparecer como publicada). Ex: agendar pra amanhã 08:00 pra já deixar pronto.",
+        internal_notes: "OBSERVAÇÕES INTERNAS é bastidor (não vai pro público). Use pra pauta, links de referência, checklist, 'falar com fulano', etc.",
+        meta_description: "META DESCRIÇÃO (SEO) é o textinho que pode aparecer no Google e quando compartilha link. Ex: \"Entenda como IA está mudando o varejo e o que isso significa pra preços e empregos.\"",
+        keywords: "PALAVRAS-CHAVE (SEO) são tags separadas por vírgula. Ex: \"inteligência artificial, varejo, tecnologia, consumo\". Sem exagero: 5 a 10 tá ótimo."
+      };
+
+      function addHelp(labelEl, text) {
+        if (!labelEl) return;
+        if (labelEl.querySelector('.oxira-help')) return;
+        const span = document.createElement('span');
+        span.className = 'oxira-help';
+        span.setAttribute('data-tip', text);
+        span.textContent = '?';
+        labelEl.appendChild(span);
+      }
+
+      function findLabel(fieldName) {
+        // Tenta achar label para widgets normais e para SplitDateTime (id_published_date_0)
+        const exact = document.querySelector('label[for="id_' + fieldName + '"]');
+        if (exact) return exact;
+        const starts = document.querySelector('label[for^="id_' + fieldName + '"]');
+        if (starts) return starts;
+        return null;
+      }
+
+      Object.keys(tips).forEach(function (k) {
+        addHelp(findLabel(k), tips[k]);
+      });
+
+      // Placeholders simpáticos
+      const title = document.getElementById('id_title');
+      if (title && !title.placeholder) title.placeholder = 'Ex: Nova lei de zoneamento: o que muda na sua cidade';
+
+      const subtitle = document.getElementById('id_subtitle');
+      if (subtitle && !subtitle.placeholder) subtitle.placeholder = 'Ex: Entenda em 3 pontos e sem juridiquês';
+
+      const meta = document.getElementById('id_meta_description');
+      if (meta && !meta.placeholder) meta.placeholder = 'Ex: Resumo curto e chamativo (até ~160 caracteres)';
+
+      const kw = document.getElementById('id_keywords');
+      if (kw && !kw.placeholder) kw.placeholder = 'Ex: política, zoneamento, congresso, cidades';
+
+      const notes = document.getElementById('id_internal_notes');
+      if (notes && !notes.placeholder) notes.placeholder = 'Bastidores: links, pauta, checklist, fontes…';
+    })();
+  </script>
+{% endblock %}

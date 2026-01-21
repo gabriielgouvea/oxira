@@ -12,6 +12,7 @@ from django.contrib.admin.views.main import ChangeList
 
 from django.forms import CheckboxSelectMultiple
 from django.db import models
+from django import forms
 
 
 def _profile(user):
@@ -307,6 +308,33 @@ class PostAdmin(admin.ModelAdmin):
             return ('-published_date', '-created_date')
         return super().get_ordering(request)
 
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        # Deixa o autor pré-definido como o usuário logado.
+        # Admin pode trocar; autor comum fica travado.
+        if getattr(request, 'user', None) and request.user.is_authenticated:
+            initial.setdefault('author', request.user.pk)
+        return initial
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj=obj, **kwargs)
+
+        # Para autores: mostra o campo, mas travado no próprio usuário.
+        # Segurança real fica no save_model (que força author=request.user).
+        if _is_author(request.user) and 'author' in form.base_fields:
+            f = form.base_fields['author']
+            f.queryset = User.objects.filter(pk=request.user.pk)
+            f.initial = request.user.pk
+            f.disabled = True
+            # Evita UI de lookup do raw_id no caso de autores
+            f.widget = forms.Select()
+
+        # Para admin: também deixa pré-selecionado o próprio usuário (mas editável)
+        if _is_admin(request.user) and 'author' in form.base_fields:
+            form.base_fields['author'].initial = request.user.pk
+
+        return form
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if _is_admin(request.user):
@@ -338,8 +366,6 @@ class PostAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         ro = list(super().get_readonly_fields(request, obj))
-        if _is_author(request.user):
-            ro.append('author')
         return ro
 
     def save_model(self, request, obj, form, change):

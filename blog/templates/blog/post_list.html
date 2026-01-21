@@ -25,7 +25,11 @@
                 <a href="{% url 'post_detail' featured.slug %}">{{ featured.title }}</a>
             </h1>
             <p class="mt-4 text-lg text-gray-600 leading-relaxed font-serif">
-                {{ featured.content|striptags|truncatewords:40 }}
+                                {% if featured.subtitle %}
+                                    {{ featured.subtitle }}
+                                {% else %}
+                                    {{ featured.content|striptags|truncatewords:40 }}
+                                {% endif %}
             </p>
             <div class="mt-4 flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
                 <span>
