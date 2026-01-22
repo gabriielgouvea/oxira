@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import random
 from dataclasses import dataclass
+import re
 
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
@@ -111,6 +112,197 @@ def _load_font(size: int):
     return ImageFont.load_default()
 
 
+def _topic_key(title: str, category_slug: str) -> str:
+    t = (title or '').lower()
+
+    if re.search(r'olimp', t):
+        return 'olympics'
+    if re.search(r'\bia\b|intelig[êe]ncia artificial|tecnologia|varejo', t):
+        return 'ai'
+    if re.search(r'campeon|t[áa]tica|jogo|futebol|partida', t):
+        return 'soccer'
+    if re.search(r'startup|startups|lucro|ebitda|neg[oó]cio', t):
+        return 'startup'
+    if re.search(r'lei|congresso|zoneamento|pol[ií]tica', t):
+        return 'politics'
+    if re.search(r'gastron|restaurante|chef|luxo', t):
+        return 'food'
+    if re.search(r'alphaville', t):
+        return 'city'
+
+    s = (category_slug or '').lower()
+    if 'esportes' in s:
+        return 'sports'
+    if 'politica' in s:
+        return 'politics'
+    if 'empreendedorismo' in s:
+        return 'startup'
+    if 'alphaville' in s:
+        return 'city'
+    return 'news'
+
+
+def _draw_topic_illustration(img, theme: Theme, topic: str):
+    from PIL import Image, ImageDraw
+
+    width, height = img.size
+    overlay = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    d = ImageDraw.Draw(overlay)
+
+    # região principal (parte de cima)
+    top_h = int(height * 0.62)
+    cx = int(width * 0.55)
+    cy = int(top_h * 0.55)
+
+    def stroke_circle(x, y, r, color, w=14):
+        d.ellipse([x - r, y - r, x + r, y + r], outline=color, width=w)
+
+    if topic == 'olympics':
+        r = int(min(width, height) * 0.08)
+        gap = int(r * 0.25)
+        x0 = int(width * 0.30)
+        y0 = int(top_h * 0.35)
+        colors = [
+            (59, 130, 246, 210),   # blue
+            (245, 158, 11, 210),   # yellow
+            (0, 0, 0, 210),        # black
+            (16, 185, 129, 210),   # green
+            (239, 68, 68, 210),    # red
+        ]
+        # 1ª linha: azul, preto, vermelho
+        stroke_circle(x0 + 0 * (2 * r + gap), y0, r, colors[0])
+        stroke_circle(x0 + 1 * (2 * r + gap), y0, r, colors[2])
+        stroke_circle(x0 + 2 * (2 * r + gap), y0, r, colors[4])
+        # 2ª linha: amarelo, verde
+        stroke_circle(x0 + int(0.5 * (2 * r + gap)), y0 + r + int(gap * 0.7), r, colors[1])
+        stroke_circle(x0 + int(1.5 * (2 * r + gap)), y0 + r + int(gap * 0.7), r, colors[3])
+
+    elif topic in ('soccer', 'sports'):
+        r = int(min(width, height) * 0.16)
+        # bola
+        stroke_circle(cx, cy, r, (255, 255, 255, 190), w=18)
+        d.ellipse([cx - r + 18, cy - r + 18, cx + r - 18, cy + r - 18], outline=(0, 0, 0, 85), width=6)
+        # pentágono central simples
+        poly = [
+            (cx, cy - int(r * 0.35)),
+            (cx + int(r * 0.33), cy - int(r * 0.10)),
+            (cx + int(r * 0.20), cy + int(r * 0.28)),
+            (cx - int(r * 0.20), cy + int(r * 0.28)),
+            (cx - int(r * 0.33), cy - int(r * 0.10)),
+        ]
+        d.polygon(poly, fill=(0, 0, 0, 110))
+        # linhas
+        for ang in (-40, 40, 140):
+            dx = int(r * 0.9)
+            dy = int(r * 0.25)
+            d.line([(cx - dx, cy - dy), (cx + dx, cy + dy)], fill=(255, 255, 255, 55), width=6)
+
+    elif topic in ('startup', 'news'):
+        # foguete estilizado
+        body_w = int(width * 0.14)
+        body_h = int(top_h * 0.32)
+        x = int(width * 0.58)
+        y = int(top_h * 0.22)
+        d.rounded_rectangle([x, y, x + body_w, y + body_h], radius=body_w // 2, fill=(255, 255, 255, 130))
+        # nariz
+        d.polygon([(x, y), (x + body_w, y), (x + body_w // 2, y - int(body_w * 0.8))], fill=(255, 255, 255, 155))
+        # janela
+        w_r = int(body_w * 0.18)
+        d.ellipse([
+            x + body_w // 2 - w_r,
+            y + int(body_h * 0.35) - w_r,
+            x + body_w // 2 + w_r,
+            y + int(body_h * 0.35) + w_r,
+        ], fill=(theme.accent[0], theme.accent[1], theme.accent[2], 180))
+        # chama
+        flame_y = y + body_h
+        d.polygon(
+            [
+                (x + body_w // 2, flame_y + int(body_w * 0.9)),
+                (x + int(body_w * 0.25), flame_y + int(body_w * 0.15)),
+                (x + int(body_w * 0.75), flame_y + int(body_w * 0.15)),
+            ],
+            fill=(245, 158, 11, 190),
+        )
+
+    elif topic == 'ai':
+        # circuito + sacola
+        node_col = (236, 254, 255, 180)
+        line_col = (236, 254, 255, 90)
+        nodes = [
+            (int(width * 0.40), int(top_h * 0.25)),
+            (int(width * 0.58), int(top_h * 0.22)),
+            (int(width * 0.68), int(top_h * 0.36)),
+            (int(width * 0.52), int(top_h * 0.42)),
+            (int(width * 0.38), int(top_h * 0.45)),
+            (int(width * 0.62), int(top_h * 0.52)),
+        ]
+        for i in range(len(nodes) - 1):
+            d.line([nodes[i], nodes[i + 1]], fill=line_col, width=10)
+        for (nx, ny) in nodes:
+            d.ellipse([nx - 18, ny - 18, nx + 18, ny + 18], fill=node_col)
+
+        bx = int(width * 0.70)
+        by = int(top_h * 0.22)
+        bw = int(width * 0.12)
+        bh = int(top_h * 0.22)
+        d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=18, fill=(255, 255, 255, 120))
+        # alça
+        d.arc([bx + 10, by - 28, bx + bw - 10, by + 36], start=200, end=-20, fill=(255, 255, 255, 160), width=8)
+
+    elif topic == 'politics':
+        # prédio com colunas + "martelo" simples
+        px = int(width * 0.46)
+        py = int(top_h * 0.22)
+        pw = int(width * 0.28)
+        ph = int(top_h * 0.32)
+        d.rectangle([px, py, px + pw, py + ph], fill=(255, 255, 255, 120))
+        d.polygon([(px, py), (px + pw, py), (px + pw // 2, py - int(ph * 0.35))], fill=(255, 255, 255, 145))
+        col_w = pw // 7
+        for i in range(1, 6):
+            x = px + i * col_w
+            d.rectangle([x, py + int(ph * 0.18), x + int(col_w * 0.45), py + ph], fill=(0, 0, 0, 40))
+        # gavel
+        gx = int(width * 0.34)
+        gy = int(top_h * 0.50)
+        d.rectangle([gx, gy, gx + 110, gy + 46], fill=(0, 0, 0, 55))
+        d.rectangle([gx + 78, gy - 70, gx + 110, gy + 120], fill=(0, 0, 0, 55))
+
+    elif topic == 'food':
+        # garfo e faca
+        fx = int(width * 0.46)
+        fy = int(top_h * 0.18)
+        fh = int(top_h * 0.44)
+        # faca
+        d.rounded_rectangle([fx, fy, fx + 40, fy + fh], radius=18, fill=(255, 255, 255, 130))
+        # garfo
+        gx = fx + 90
+        d.rounded_rectangle([gx, fy + 40, gx + 40, fy + fh], radius=18, fill=(255, 255, 255, 130))
+        for i in range(4):
+            d.rectangle([gx + i * 10, fy, gx + i * 10 + 6, fy + 70], fill=(255, 255, 255, 150))
+
+    elif topic == 'city':
+        # skyline
+        base_y = int(top_h * 0.60)
+        x = int(width * 0.30)
+        for w, h in [(120, 240), (180, 320), (140, 280), (220, 360), (150, 260)]:
+            d.rectangle([x, base_y - h, x + w, base_y], fill=(255, 255, 255, 110))
+            # janelas
+            for wx in range(x + 18, x + w - 18, 28):
+                for wy in range(base_y - h + 22, base_y - 18, 34):
+                    d.rectangle([wx, wy, wx + 10, wy + 16], fill=(0, 0, 0, 35))
+            x += w + 24
+
+    # vinheta leve
+    vignette = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    vd = ImageDraw.Draw(vignette)
+    vd.rectangle([0, 0, width, int(height * 0.70)], fill=(0, 0, 0, 35))
+
+    img = Image.alpha_composite(img.convert('RGBA'), overlay)
+    img = Image.alpha_composite(img, vignette)
+    return img.convert('RGB')
+
+
 def _make_image_bytes(post: Post, theme: Theme, size: tuple[int, int]) -> bytes:
     from PIL import Image, ImageDraw
 
@@ -127,25 +319,16 @@ def _make_image_bytes(post: Post, theme: Theme, size: tuple[int, int]) -> bytes:
         b = int(theme.bg1[2] * (1 - t) + theme.bg2[2] * t)
         draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-    # Shapes/ruído leve pra não ficar “chapado”
-    random.seed(post.slug)
-    for _ in range(18):
-        x1 = random.randint(-50, width - 50)
-        y1 = random.randint(-50, height - 50)
-        x2 = x1 + random.randint(80, 220)
-        y2 = y1 + random.randint(80, 220)
-        alpha = random.randint(18, 40)
-        col = (
-            min(255, theme.accent[0] + random.randint(-20, 20)),
-            min(255, theme.accent[1] + random.randint(-20, 20)),
-            min(255, theme.accent[2] + random.randint(-20, 20)),
-            alpha,
-        )
-        overlay = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-        od = ImageDraw.Draw(overlay)
-        od.ellipse([x1, y1, x2, y2], fill=col)
-        img = Image.alpha_composite(img.convert('RGBA'), overlay).convert('RGB')
-        draw = ImageDraw.Draw(img)
+    # Ilustração relacionada ao tema/título (bem mais contextual que ruído aleatório)
+    cat_slug = ''
+    try:
+        if post.category and post.category.slug:
+            cat_slug = post.category.slug
+    except Exception:
+        cat_slug = ''
+    topic = _topic_key(post.title, cat_slug)
+    img = _draw_topic_illustration(img, theme, topic)
+    draw = ImageDraw.Draw(img)
 
     # Barra inferior (tipo tarja)
     bar_h = int(height * 0.33)
@@ -158,8 +341,8 @@ def _make_image_bytes(post: Post, theme: Theme, size: tuple[int, int]) -> bytes:
     font_title = _load_font(int(height * 0.09))
     font_meta = _load_font(int(height * 0.05))
 
-    # Ícone + categoria
-    meta_text = f"{theme.icon}  {cat.upper()}"
+    # Categoria (sem depender de emoji para "parecer tema")
+    meta_text = f"{cat.upper()}"
     draw.text((40, height - bar_h + 28), meta_text, fill=(255, 255, 255), font=font_meta)
 
     # Título quebrado
