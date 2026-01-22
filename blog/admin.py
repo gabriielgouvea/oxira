@@ -260,6 +260,22 @@ class PendingAuthorAdmin(UserAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
+    class PostAdminForm(forms.ModelForm):
+        class Meta:
+            model = Post
+            fields = '__all__'
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if 'image' in self.fields:
+                self.fields['image'].help_text = (
+                    'Tamanho recomendado: 1280×720 (16:9). '
+                    'Preferência: JPG/WEBP, bem comprimido. '
+                    'Evite imagens pequenas (fica pixelado na capa).'
+                )
+
+    form = PostAdminForm
+
     class Media:
         js = (
             'admin/js/live_search.js',
