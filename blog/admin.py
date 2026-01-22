@@ -26,7 +26,9 @@ def _is_admin(user):
 
 def _is_author(user):
     p = _profile(user)
-    return bool(p and p.role == 'author')
+    # Um superuser/admin não deve ser tratado como "autor" no admin,
+    # mesmo que o perfil esteja marcado como author.
+    return bool(p and p.role == 'author' and not _is_admin(user))
 
 # Inline para editar o perfil dentro do usuário
 class UserProfileInline(admin.StackedInline):
