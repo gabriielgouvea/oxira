@@ -74,7 +74,7 @@
                             {{ post.category.name }}
                         </div>
                         <a href="{% url 'post_detail' post.slug %}" class="flex gap-3">
-                            <div class="w-24 h-16 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                            <div class="w-24 aspect-square rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
                                 {% if post.image %}
                                     <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
                                 {% endif %}
@@ -115,7 +115,7 @@
                     {% if 'empreendedorismo' in post.category.slug %}
                     <article class="mb-6">
                         <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
-                            <div class="w-24 h-16 md:w-full md:aspect-video md:h-auto rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
+                            <div class="w-24 aspect-square md:w-full md:aspect-video rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
                                 {% if post.image %}
                                     <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
                                 {% endif %}
@@ -140,7 +140,7 @@
                     {% if 'esportes' in post.category.slug %}
                     <article class="mb-6">
                         <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
-                            <div class="w-24 h-16 md:w-full md:aspect-video md:h-auto rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
+                            <div class="w-24 aspect-square md:w-full md:aspect-video rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
                                 {% if post.image %}
                                     <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
                                 {% endif %}
