@@ -1,184 +1,219 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-<div class="mt-4 mb-12 border-b border-black pb-4">
-    <div class="flex justify-between items-center">
-        <h2 class="text-xs font-bold uppercase tracking-widest text-red-600">Últimas Notícias</h2>
+<div id="ultimas" class="mt-2 mb-8 border-b border-black pb-4">
+    <div class="flex justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-red-600">
+                {% if category %}{{ category.name }}{% else %}Últimas Notícias{% endif %}
+            </h2>
+            <span class="hidden sm:inline text-[11px] font-bold uppercase tracking-widest text-gray-400">Oxira</span>
+        </div>
         <span class="text-xs text-gray-400 font-mono">{% now "d de F, Y" %}</span>
     </div>
 </div>
 
 {% if posts %}
-    <!-- Featured Section (Forbes Style) -->
-    <section class="grid lg:grid-cols-12 gap-12 mb-20 animate-fade-in-up">
-        <!-- Main Highlight -->
-        <article class="lg:col-span-8 group cursor-pointer">
-            {% with featured=posts.0 %}
-            <div class="relative overflow-hidden mb-4 rounded-sm">
-                {% if featured.image %}
-                    <div class="bg-gray-100 aspect-video w-full overflow-hidden">
-                        <img src="{{ featured.image.url }}" alt="{{ featured.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out" loading="lazy" />
+    {% with lead=posts.0 %}
+    <!-- Manchete + coluna lateral (estilo portal) -->
+    <section class="grid lg:grid-cols-12 gap-10 mb-10">
+        <article class="lg:col-span-8">
+            <div class="border-b border-gray-200 pb-8">
+                <div class="flex flex-col-reverse lg:flex-row gap-6 items-start">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                            <span class="text-red-600">{{ lead.category.name|default:"Geral" }}</span>
+                            <span class="text-gray-300">|</span>
+                            <span class="text-gray-400">{{ lead.published_date|date:"d M" }}</span>
+                        </div>
+                        <h1 class="mt-3 text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 leading-tight">
+                            <a class="hover:underline decoration-2 underline-offset-4 decoration-black" href="{% url 'post_detail' lead.slug %}">{{ lead.title }}</a>
+                        </h1>
+                        <p class="mt-4 text-lg md:text-xl text-gray-700 leading-relaxed font-serif">
+                            {% if lead.subtitle %}
+                                {{ lead.subtitle }}
+                            {% else %}
+                                {{ lead.content|striptags|truncatewords:30 }}
+                            {% endif %}
+                        </p>
+                        <div class="mt-4 text-xs font-bold uppercase tracking-widest text-gray-400">
+                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' lead.author.username %}">{{ lead.author.get_full_name|default:lead.author.username }}</a>
+                            <span class="mx-2">•</span>
+                            <span>{{ lead.published_date|timesince }} atrás</span>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="bg-gray-200 aspect-video w-full object-cover group-hover:scale-105 transition duration-700 ease-in-out"></div>
-                {% endif %}
-                <div class="absolute bottom-0 left-0 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-widest">
-                    {{ featured.category.name|default:"Geral" }}
+                    <div class="w-full lg:w-80 flex-shrink-0">
+                        <div class="w-full h-56 lg:h-44 bg-gray-100 overflow-hidden rounded-sm">
+                            {% if lead.image %}
+                                <img src="{{ lead.image.url }}" alt="{{ lead.title }}" class="w-full h-full object-cover" loading="lazy" />
+                            {% else %}
+                                <div class="w-full h-full bg-gray-200"></div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
-            <h1 class="text-3xl md:text-5xl font-serif font-bold text-gray-900 leading-tight group-hover:underline decoration-2 underline-offset-4 decoration-black">
-                <a href="{% url 'post_detail' featured.slug %}">{{ featured.title }}</a>
-            </h1>
-            <p class="mt-4 text-lg text-gray-600 leading-relaxed font-serif">
-                                {% if featured.subtitle %}
-                                    {{ featured.subtitle }}
-                                {% else %}
-                                    {{ featured.content|striptags|truncatewords:40 }}
-                                {% endif %}
-            </p>
-            <div class="mt-4 flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
-                <span>
-                    Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' featured.author.username %}">{{ featured.author.get_full_name|default:featured.author.username }}</a>
-                </span>
-                <span class="mx-2">|</span>
-                <span>{{ featured.published_date|timesince }} atrás</span>
-            </div>
-            {% endwith %}
         </article>
 
-        <!-- Ad Space: Middle Mobile Only -->
-        <div class="lg:hidden flex justify-center py-6 border-t border-b border-gray-100 my-4">
-            <div class="w-full max-w-[300px] h-[250px] bg-gray-200 flex items-center justify-center border border-gray-300">
-                <span class="text-xs text-gray-400 uppercase">Publicidade</span>
-            </div>
-        </div>
-
-        <!-- Sidebar List -->
-        <aside class="lg:col-span-4 border-l border-gray-100 pl-0 lg:pl-12 space-y-10">
-            <!-- Ad Space: Sidebar Box -->
-            <div class="hidden lg:flex w-full aspect-square bg-gray-50 items-center justify-center border border-gray-200 mb-8">
-                <span class="text-xs text-gray-400 uppercase tracking-widest">Publicidade (Sidebar)</span>
-            </div>
-
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-widest text-black mb-6 border-b border-black pb-2">Mais Lidas</h3>
-                <div class="space-y-6">
-                    {% for post in posts|slice:"1:5" %}
-                    <article class="group">
-                        <div class="text-xs font-bold uppercase tracking-widest mb-1 
-                            {% if 'esportes' in post.category.slug %}text-green-600
-                            {% elif 'politica' in post.category.slug %}text-red-600
-                            {% elif 'empreendedorismo' in post.category.slug %}text-blue-900
-                            {% elif 'alphaville' in post.category.slug %}text-purple-700
-                            {% else %}text-gray-500{% endif %}">
-                            {{ post.category.name }}
+        <aside class="lg:col-span-4">
+            <div class="bg-white border border-gray-100 shadow-sm rounded-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-black">Mais lidas</h3>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for post in posts|slice:"1:7" %}
+                    <a href="{% url 'post_detail' post.slug %}" class="flex gap-4 p-5 group">
+                        <div class="w-20 h-20 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                            {% if post.image %}
+                                <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                            {% endif %}
                         </div>
-                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3">
-                            <div class="w-24 h-24 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
-                                {% if post.image %}
-                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
-                                {% endif %}
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                {{ post.category.name|default:"Geral" }}
                             </div>
-                            <div class="min-w-0">
-                                <h4 class="text-lg font-bold leading-tight group-hover:text-gray-600 transition line-clamp-3">
-                                    {{ post.title }}
-                                </h4>
-                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
-                                </div>
+                            <div class="mt-1 font-serif font-bold text-base leading-snug text-gray-900 group-hover:text-gray-700 transition line-clamp-3">
+                                {{ post.title }}
                             </div>
-                        </a>
-                    </article>
+                        </div>
+                    </a>
                     {% endfor %}
                 </div>
             </div>
-            
-            <div class="bg-gray-50 p-6 text-center border border-gray-100">
-                <h4 class="font-serif font-bold text-xl mb-2">Oxira Newsletter</h4>
-                <p class="text-sm text-gray-600 mb-4">Receba análises exclusivas diretamente no seu e-mail.</p>
-                <button class="w-full bg-black text-white py-2 px-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition">
-                    Inscrever-se
-                </button>
+
+            <div class="mt-6 hidden lg:flex w-full h-[250px] bg-gray-50 items-center justify-center border border-gray-200 rounded-sm">
+                <span class="text-xs text-gray-400 uppercase tracking-widest">Publicidade (300x250)</span>
             </div>
         </aside>
     </section>
+    {% endwith %}
 
-    <!-- Category Sections -->
-    <div class="border-t-4 border-black pt-12 mb-12">
-        <h2 class="text-4xl font-serif font-black mb-12 text-center">Profundidade por Tema</h2>
-        
-        <div class="grid md:grid-cols-3 gap-8">
-            <!-- Coluna 1 -->
-            <div class="space-y-8">
-                <h3 class="text-xl font-bold border-b-2 border-blue-900 pb-2 text-blue-900 uppercase tracking-widest">Empreendedorismo</h3>
-                {% for post in posts %}
-                    {% if 'empreendedorismo' in post.category.slug %}
-                    <article class="mb-6">
-                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
-                            <div class="w-24 h-24 md:w-full md:h-44 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
-                                {% if post.image %}
-                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
-                                {% endif %}
-                            </div>
-                            <div class="min-w-0">
-                                <h4 class="text-lg font-bold leading-snug hover:underline line-clamp-3">{{ post.title }}</h4>
-                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
-                            </div>
-                        </a>
-                    </article>
-                    {% endif %}
-                {% endfor %}
-            </div>
+    <!-- Grade de destaques (2 colunas com separadores) -->
+    <section class="mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-black">Destaques</h2>
+            <a href="#ultimas" class="text-xs font-bold uppercase tracking-widest text-red-600 hover:text-red-700">Ver mais</a>
+        </div>
 
-            <!-- Coluna 2 -->
-            <div class="space-y-8">
-                <h3 class="text-xl font-bold border-b-2 border-green-600 pb-2 text-green-600 uppercase tracking-widest">Esportes</h3>
-                {% for post in posts %}
-                    {% if 'esportes' in post.category.slug %}
-                    <article class="mb-6">
-                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-3 md:gap-4 md:block">
-                            <div class="w-24 h-24 md:w-full md:h-44 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0 md:mb-3">
-                                {% if post.image %}
-                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
-                                {% endif %}
-                            </div>
-                            <div class="min-w-0">
-                                <h4 class="text-lg font-bold leading-snug hover:underline line-clamp-3">{{ post.title }}</h4>
-                                <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                                    Por <span class="hover:text-red-600 transition"><a href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a></span>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
-                            </div>
-                        </a>
-                    </article>
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-             <!-- Coluna 3 -->
-             <div class="space-y-8">
-                <h3 class="text-xl font-bold border-b-2 border-red-600 pb-2 text-red-600 uppercase tracking-widest">Política</h3>
-                {% for post in posts %}
-                    {% if 'politica' in post.category.slug %}
-                    <article class="mb-6">
-                        <h4 class="text-lg font-bold leading-snug hover:underline"><a href="{% url 'post_detail' post.slug %}">{{ post.title }}</a></h4>
-                        <div class="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                            Por <a class="hover:text-red-600 transition" href="{% url 'author_detail' post.author.username %}">{{ post.author.get_full_name|default:post.author.username }}</a>
+        <div class="grid md:grid-cols-2 gap-x-12">
+            {% for post in posts|slice:"1:9" %}
+                <a href="{% url 'post_detail' post.slug %}" class="flex gap-4 py-6 border-b border-gray-200 group">
+                    <div class="w-28 h-20 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                        {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                        {% endif %}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                            {{ post.category.name|default:"Geral" }}
                         </div>
-                        <p class="text-sm text-gray-500 mt-2">{{ post.published_date|date:"d M" }}</p>
-                    </article>
-                    {% endif %}
-                {% endfor %}
+                        <h3 class="mt-1 font-serif font-bold text-lg leading-snug text-gray-900 group-hover:underline decoration-2 underline-offset-4 decoration-black line-clamp-3">
+                            {{ post.title }}
+                        </h3>
+                        <p class="mt-2 text-sm text-gray-600 font-serif leading-relaxed line-clamp-2 hidden sm:block">
+                            {% if post.subtitle %}
+                                {{ post.subtitle }}
+                            {% else %}
+                                {{ post.content|striptags|truncatewords:18 }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Profundidade por tema (colunas tipo portal) -->
+    <section class="mt-12 border-t-4 border-black pt-10 mb-12">
+        <div class="flex items-end justify-between gap-6 flex-wrap mb-8">
+            <h2 class="text-3xl md:text-4xl font-serif font-black">Profundidade por tema</h2>
+            <span class="text-xs text-gray-400 font-mono">Atualizado continuamente</span>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-10">
+            <div>
+                <div class="flex items-center justify-between border-b-2 border-blue-900 pb-2 mb-6">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-blue-900">Empreendedorismo</h3>
+                    <a class="text-xs font-bold uppercase tracking-widest text-blue-900 hover:underline" href="/categoria/oxira-empreendedorismo/">Ver</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for post in posts %}
+                        {% if post.category and 'empreendedorismo' in post.category.slug %}
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-4 py-5 group">
+                            <div class="w-20 h-20 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-serif font-bold text-base leading-snug group-hover:underline line-clamp-3">{{ post.title }}</div>
+                                <div class="mt-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                    Por {{ post.author.get_full_name|default:post.author.username }} • {{ post.published_date|date:"d M" }}
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between border-b-2 border-green-600 pb-2 mb-6">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-green-600">Esportes</h3>
+                    <a class="text-xs font-bold uppercase tracking-widest text-green-600 hover:underline" href="/categoria/oxira-esportes/">Ver</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for post in posts %}
+                        {% if post.category and 'esportes' in post.category.slug %}
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-4 py-5 group">
+                            <div class="w-20 h-20 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-serif font-bold text-base leading-snug group-hover:underline line-clamp-3">{{ post.title }}</div>
+                                <div class="mt-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                    Por {{ post.author.get_full_name|default:post.author.username }} • {{ post.published_date|date:"d M" }}
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between border-b-2 border-red-600 pb-2 mb-6">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-red-600">Política</h3>
+                    <a class="text-xs font-bold uppercase tracking-widest text-red-600 hover:underline" href="/categoria/oxira-politica/">Ver</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for post in posts %}
+                        {% if post.category and 'politica' in post.category.slug %}
+                        <a href="{% url 'post_detail' post.slug %}" class="flex gap-4 py-5 group">
+                            <div class="w-20 h-20 rounded-sm overflow-hidden bg-gray-200 flex-shrink-0">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover" loading="lazy" />
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-serif font-bold text-base leading-snug group-hover:underline line-clamp-3">{{ post.title }}</div>
+                                <div class="mt-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                    Por {{ post.author.get_full_name|default:post.author.username }} • {{ post.published_date|date:"d M" }}
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
 {% else %}
     <div class="text-center py-20">
-        <p class="text-gray-500">Carregando conteúdo...</p>
+        <p class="text-gray-500">Nenhuma matéria publicada ainda.</p>
     </div>
 {% endif %}
 
