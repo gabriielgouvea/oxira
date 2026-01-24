@@ -62,7 +62,7 @@
         </header>
 
         <div class="prose prose-lg prose-blue max-w-none text-gray-800 leading-relaxed text-justify">
-            {{ post.content|linebreaks }}
+            {{ post.content|safe }}
             
             <!-- Ad Space: In-Content (After 1st paragraph simulation) -->
             <div class="my-8 w-full bg-gray-50 p-4 border-l-4 border-black">

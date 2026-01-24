@@ -139,6 +139,9 @@ CKEDITOR_CONFIGS = {
         'toolbar': 'full',
         'height': 500,
         'width': '100%',
+        # Permite embed por iframe (ex.: Instagram) sem liberar scripts.
+        # Use junto com renderização do conteúdo como HTML (|safe) nos templates.
+        'extraAllowedContent': 'iframe[*]{*}(*)',
     },
 }
 

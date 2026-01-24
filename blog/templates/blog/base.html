@@ -19,6 +19,7 @@
         img, video, iframe, embed, object { max-width: 100%; }
         img { height: auto; }
         .prose, article { overflow-wrap: anywhere; word-break: break-word; }
+        .prose iframe { width: 100%; display: block; margin: 16px auto; border: 0; }
         ins.adsbygoogle { display: block; max-width: 100%; overflow: hidden; }
         ins.adsbygoogle iframe { max-width: 100%; }
     </style>
@@ -84,43 +85,37 @@
 
     <!-- Header -->
     <header class="bg-black text-white sticky top-0 z-20 shadow-md">
-        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
-            
-            <!-- Left: Hambuger & Brand -->
-            <div class="flex items-center space-x-6">
-                <button onclick="toggleSidebar()" class="text-white hover:text-gray-300 focus:outline-none">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-                <a href="/" class="text-2xl font-serif font-black tracking-tighter text-white">
-                    OXIRA
-                </a>
-            </div>
+        <div class="container mx-auto px-4 py-3">
+            <div class="grid grid-cols-3 items-center">
+                <!-- Left: Hamburger -->
+                <div class="flex items-center justify-start">
+                    <button onclick="toggleSidebar()" class="text-white hover:text-gray-300 focus:outline-none" aria-label="Abrir menu">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
 
-            <!-- Right: Subscribe & Search -->
-            <div class="flex items-center space-x-6">
-                <a href="#" class="hidden md:block bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase px-4 py-2 rounded transition tracking-wider">
-                    Assine a Newsletter
-                </a>
-                <button class="text-white hover:text-gray-300">
-                    <i data-lucide="search" class="w-5 h-5"></i>
-                </button>
+                <!-- Center: Brand + Date -->
+                <div class="text-center">
+                    <a href="/" class="inline-block text-2xl md:text-3xl font-serif font-black tracking-tighter text-white leading-none">
+                        OXIRA
+                    </a>
+                    <div class="mt-1 text-[10px] md:text-[11px] text-gray-300 tracking-wide uppercase">
+                        SÃO PAULO — {% now "l, j \d\e F \d\e Y" %}
+                    </div>
+                </div>
+
+                <!-- Right: Subscribe & Search -->
+                <div class="flex items-center justify-end gap-4 md:gap-6">
+                    <a href="#" class="hidden md:inline-flex bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase px-4 py-2 rounded transition tracking-wider">
+                        Assine a Newsletter
+                    </a>
+                    <button class="text-white hover:text-gray-300" aria-label="Buscar">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
-
-    <!-- Masthead (estilo jornal): logo central + cidade e data -->
-    <div class="bg-gray-50 border-b border-gray-200">
-        <div class="container mx-auto px-4 py-6 text-center">
-            <a href="/" class="inline-block">
-                <div class="text-4xl md:text-6xl font-serif font-black tracking-tight text-blue-900 leading-none">
-                    OXIRA
-                </div>
-            </a>
-            <div class="mt-2 text-[11px] md:text-xs text-gray-600 tracking-wide uppercase">
-                SÃO PAULO — {% now "l, j \\d\\e F \\d\\e Y" %}
-            </div>
-        </div>
-    </div>
 
     <!-- Ad Space: Top Billboard -->
     <div class="bg-gray-100 py-4 border-b border-gray-200">
