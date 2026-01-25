@@ -1,4 +1,5 @@
 {% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify jazzmin %}
 
 {% block breadcrumbs %}{% endblock %}
 {% block nav-breadcrumbs %}{% endblock %}
@@ -329,6 +330,61 @@
         max-width: min(320px, calc(100vw - 24px));
       }
     }
+
+    /* ===== Ações no rodapé (em vez de lateral) ===== */
+    body.model-post.change-form .oxira-actions-bottom {
+      margin-top: 16px;
+    }
+
+    body.model-post.change-form .oxira-actions-bottom .card {
+      border-radius: 16px !important;
+      border: 1px solid rgba(0,0,0,.06) !important;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04) !important;
+    }
+
+    body.model-post.change-form .oxira-actions-bottom .btn {
+      border-radius: 12px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      padding: 12px 14px;
+    }
+
+    /* Painel lateral (substitui os botões padrão do Jazzmin) */
+    body.model-post.change-form #jazzy-actions {
+      position: sticky;
+      top: 12px;
+    }
+
+    body.model-post.change-form .oxira-sidepanel {
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,.06);
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04);
+      padding: 14px;
+    }
+
+    body.model-post.change-form .oxira-sidepanel h3 {
+      font-size: 13px;
+      font-weight: 950;
+      margin: 0 0 8px 0;
+      color: rgba(17,24,39,.92);
+    }
+
+    body.model-post.change-form .oxira-sidepanel .muted {
+      color: rgba(107,114,128,.95);
+      font-size: 12px;
+    }
+
+    body.model-post.change-form .oxira-sidepanel ul {
+      margin: 10px 0 0 0;
+      padding-left: 18px;
+    }
+
+    body.model-post.change-form .oxira-sidepanel li {
+      margin: 6px 0;
+      color: rgba(31,41,55,.92);
+      font-size: 12px;
+    }
   </style>
 {% endblock %}
 
@@ -338,6 +394,62 @@
     <span class="muted">Dica rápida: título chama clique, subtítulo segura o leitor e conteúdo entrega a promessa (sem enrolação, claro).</span>
   </div>
   {{ block.super }}
+{% endblock %}
+
+{# Substitui os botões padrão na lateral direita por um painel útil #}
+{% block submit_buttons_bottom %}
+  <div class="oxira-sidepanel">
+    <h3>Assistente IA</h3>
+    <div class="muted">Sugestões rápidas sem sair do editor (usa o conteúdo atual).</div>
+
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+      <textarea id="oxira-ai-angle" rows="2" placeholder="Ângulo/objetivo (opcional). Ex: foco em serviço, sem opinião…" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,0,0,.12);"></textarea>
+
+      <button type="button" class="btn btn-outline-primary btn-block oxira-ai-btn" data-action="titles" data-endpoint="{% url 'admin:blog_post_ai_assistant' %}">Sugerir 10 títulos</button>
+      <button type="button" class="btn btn-outline-primary btn-block oxira-ai-btn" data-action="subtitles" data-endpoint="{% url 'admin:blog_post_ai_assistant' %}">Sugerir subtítulos</button>
+      <button type="button" class="btn btn-outline-primary btn-block oxira-ai-btn" data-action="lead" data-endpoint="{% url 'admin:blog_post_ai_assistant' %}">Criar lead</button>
+      <button type="button" class="btn btn-outline-primary btn-block oxira-ai-btn" data-action="seo" data-endpoint="{% url 'admin:blog_post_ai_assistant' %}">SEO (meta + keywords)</button>
+    </div>
+
+    <div id="oxira-ai-status" class="muted" style="margin-top:10px;display:none;"></div>
+    <div id="oxira-ai-result" style="margin-top:10px;display:none;"></div>
+
+    <hr style="border:0;border-top:1px solid rgba(0,0,0,.06);margin:14px 0;">
+
+    <h3>Checklist rápido</h3>
+    <div class="muted">Antes de publicar, confere isso aqui.</div>
+    <ul>
+      <li>Título claro (benefício + contexto)</li>
+      <li>Subtítulo com promessa (1 frase)</li>
+      <li>Imagem destacada 16:9 (1280×720)</li>
+      <li>Categoria correta</li>
+      <li>Status e data de publicação ok</li>
+      <li>Meta descrição pronta (SEO)</li>
+    </ul>
+
+    {% if change and not is_popup %}
+      <hr style="border:0;border-top:1px solid rgba(0,0,0,.06);margin:12px 0;">
+      <h3>Ferramentas</h3>
+      <div class="muted" style="margin-bottom:8px;">Ações úteis desse post.</div>
+      <div class="object-tools" style="margin:0;">
+        {% change_form_object_tools %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{# Botões no final da página, um abaixo do outro #}
+{% block after_related_objects %}
+  {{ block.super }}
+  <div class="col-12 oxira-actions-bottom">
+    <div class="card">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+        <button type="submit" name="_save" class="btn btn-success btn-block">Salvar</button>
+        <button type="submit" name="_save_draft" class="btn btn-warning btn-block">Salvar nos rascunhos</button>
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="btn btn-outline-secondary btn-block">Cancelar</a>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block admin_change_form_document_ready %}
@@ -397,6 +509,181 @@
 
       const notes = document.getElementById('id_internal_notes');
       if (notes && !notes.placeholder) notes.placeholder = 'Bastidores: links, pauta, checklist, fontes…';
+    })();
+  </script>
+
+  <script>
+    (function () {
+      function getCSRF() {
+        const el = document.querySelector('input[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+      }
+
+      function getEditorHtml() {
+        try {
+          if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances.id_content) {
+            return CKEDITOR.instances.id_content.getData() || '';
+          }
+        } catch (e) {}
+        const el = document.getElementById('id_content');
+        return el ? (el.value || '') : '';
+      }
+
+      function setFieldValue(fieldId, value) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      function escapeHtml(s) {
+        return (s || '').replace(/[&<>"']/g, function (c) {
+          return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+      }
+
+      function parseBullets(text) {
+        const lines = (text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const bullets = lines
+          .filter(l => l.startsWith('- '))
+          .map(l => l.replace(/^\-\s+/, '').trim())
+          .filter(Boolean);
+        return bullets.length ? bullets : null;
+      }
+
+      function renderResult(action, text) {
+        const container = document.getElementById('oxira-ai-result');
+        if (!container) return;
+
+        const bullets = parseBullets(text);
+        if (bullets) {
+          const targetField = action === 'titles' ? 'id_title' : (action === 'subtitles' ? 'id_subtitle' : null);
+          const label = action === 'titles' ? 'Usar no título' : 'Usar no subtítulo';
+
+          container.innerHTML = [
+            '<div style="display:flex;flex-direction:column;gap:10px;">',
+            bullets.map(function (b) {
+              return (
+                '<div style="border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px rgba(0,0,0,.04);">' +
+                  '<div style="font-weight:850;color:rgba(17,24,39,.92);font-size:12px;margin-bottom:8px;">' + escapeHtml(b) + '</div>' +
+                  (targetField ? '<button type="button" class="btn btn-sm btn-success btn-block oxira-ai-apply" data-target="' + targetField + '" data-value="' + escapeHtml(b) + '">' + label + '</button>' : '') +
+                '</div>'
+              );
+            }).join(''),
+            '</div>'
+          ].join('');
+
+          container.style.display = 'block';
+          return;
+        }
+
+        // SEO: meta + keywords
+        if (action === 'seo') {
+          const metaMatch = (text || '').match(/^Meta:\s*(.*)$/mi);
+          const kwMatch = (text || '').match(/^Keywords:\s*(.*)$/mi);
+          const meta = metaMatch ? metaMatch[1].trim() : '';
+          const kw = kwMatch ? kwMatch[1].trim() : '';
+
+          container.innerHTML = (
+            '<div style="display:flex;flex-direction:column;gap:10px;">' +
+              '<div style="border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:10px 12px;">' +
+                '<div class="muted" style="margin-bottom:6px;">Meta descrição</div>' +
+                '<div style="font-weight:850;font-size:12px;">' + escapeHtml(meta || text) + '</div>' +
+                (meta ? '<button type="button" class="btn btn-sm btn-success btn-block oxira-ai-apply" data-target="id_meta_description" data-value="' + escapeHtml(meta) + '">Aplicar no campo</button>' : '') +
+              '</div>' +
+              '<div style="border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:10px 12px;">' +
+                '<div class="muted" style="margin-bottom:6px;">Keywords</div>' +
+                '<div style="font-weight:850;font-size:12px;">' + escapeHtml(kw) + '</div>' +
+                (kw ? '<button type="button" class="btn btn-sm btn-success btn-block oxira-ai-apply" data-target="id_keywords" data-value="' + escapeHtml(kw) + '">Aplicar no campo</button>' : '') +
+              '</div>' +
+            '</div>'
+          );
+          container.style.display = 'block';
+          return;
+        }
+
+        // Lead / fallback
+        container.innerHTML = (
+          '<div style="border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:10px 12px;">' +
+            '<div style="white-space:pre-wrap;font-weight:750;font-size:12px;color:rgba(17,24,39,.92);">' + escapeHtml(text) + '</div>' +
+            '<button type="button" class="btn btn-sm btn-success btn-block" id="oxira-ai-copy">Copiar</button>' +
+          '</div>'
+        );
+        container.style.display = 'block';
+
+        const copyBtn = document.getElementById('oxira-ai-copy');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(text || '').catch(function () {});
+          });
+        }
+      }
+
+      async function callAI(action, endpoint) {
+        const status = document.getElementById('oxira-ai-status');
+        const result = document.getElementById('oxira-ai-result');
+        if (status) {
+          status.style.display = 'block';
+          status.textContent = 'Gerando…';
+        }
+        if (result) {
+          result.style.display = 'none';
+          result.innerHTML = '';
+        }
+
+        const form = new URLSearchParams();
+        form.set('action', action);
+        form.set('title', (document.getElementById('id_title')?.value || '').trim());
+        form.set('subtitle', (document.getElementById('id_subtitle')?.value || '').trim());
+        form.set('angle', (document.getElementById('oxira-ai-angle')?.value || '').trim());
+        form.set('content', getEditorHtml());
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'X-CSRFToken': getCSRF(),
+          },
+          body: form.toString(),
+          credentials: 'same-origin',
+        });
+
+        const data = await res.json().catch(function () { return null; });
+        if (!data || !data.ok) {
+          const msg = (data && data.error) ? data.error : ('Erro HTTP ' + res.status);
+          if (status) status.textContent = msg;
+          return;
+        }
+        if (status) status.style.display = 'none';
+        renderResult(action, data.result || '');
+      }
+
+      document.addEventListener('click', function (e) {
+        const btn = e.target && e.target.closest ? e.target.closest('.oxira-ai-btn') : null;
+        if (btn) {
+          e.preventDefault();
+          const action = btn.getAttribute('data-action');
+          const endpoint = btn.getAttribute('data-endpoint');
+          if (!endpoint) return;
+          callAI(action, endpoint).catch(function (err) {
+            const status = document.getElementById('oxira-ai-status');
+            if (status) {
+              status.style.display = 'block';
+              status.textContent = (err && err.message) ? err.message : 'Falha ao chamar IA.';
+            }
+          });
+          return;
+        }
+
+        const apply = e.target && e.target.closest ? e.target.closest('.oxira-ai-apply') : null;
+        if (apply) {
+          e.preventDefault();
+          const target = apply.getAttribute('data-target');
+          const value = apply.getAttribute('data-value');
+          if (target) setFieldValue(target, value || '');
+        }
+      });
     })();
   </script>
 {% endblock %}
