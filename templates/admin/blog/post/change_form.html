@@ -461,6 +461,22 @@
 
 {% block form_top %}
   {{ block.super }}
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin:0 0 12px 0;">
+    {% if change and original and original.pk %}
+      <a
+        href="{% url 'post_preview' original.pk %}"
+        class="btn btn-outline-primary"
+        target="_blank"
+        rel="noopener"
+        style="border-radius:12px;font-weight:900;"
+      >Visualizar no site</a>
+    {% else %}
+      <button type="button" class="btn btn-outline-primary" disabled style="border-radius:12px;font-weight:900;opacity:.55;cursor:not-allowed;">
+        Visualizar no site
+      </button>
+    {% endif %}
+  </div>
 {% endblock %}
 
 {# Mantém o layout do Jazzmin (9 + 3 colunas) e coloca os botões NO FINAL da coluna principal #}

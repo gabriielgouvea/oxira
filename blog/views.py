@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -45,6 +46,33 @@ def post_detail(request, slug):
         request,
         'blog/post_detail.html',
         {'post': post, 'author_profile': author_profile, 'more_from_author': more_from_author},
+    )
+
+
+@staff_member_required
+def post_preview(request, pk: int):
+    post = get_object_or_404(Post.objects.select_related('author'), pk=pk)
+
+    try:
+        author_profile = post.author.profile
+    except UserProfile.DoesNotExist:
+        author_profile = None
+
+    more_from_author = (
+        Post.objects.filter(status='published', author=post.author)
+        .exclude(pk=post.pk)
+        .order_by('-published_date')[:5]
+    )
+
+    return render(
+        request,
+        'blog/post_detail.html',
+        {
+            'post': post,
+            'author_profile': author_profile,
+            'more_from_author': more_from_author,
+            'preview_mode': True,
+        },
     )
 
 

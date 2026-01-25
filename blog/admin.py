@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 
 from django.forms import CheckboxSelectMultiple
 from django.db import models
@@ -403,6 +404,19 @@ class PostAdmin(admin.ModelAdmin):
         if _is_author(request.user):
             obj.author = request.user
         super().save_model(request, obj, form, change)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        form_field = super().formfield_for_dbfield(db_field, request, **kwargs)
+
+        # Remove os ícones de ação (editar/adicionar/excluir/visualizar) do widget de relacionamento
+        # e deixa somente o select.
+        if db_field.name == 'category' and isinstance(form_field.widget, RelatedFieldWidgetWrapper):
+            form_field.widget.can_add_related = False
+            form_field.widget.can_change_related = False
+            form_field.widget.can_delete_related = False
+            form_field.widget.can_view_related = False
+
+        return form_field
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Autor só pode escolher categoria dentre as permitidas

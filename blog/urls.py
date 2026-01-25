@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.post_list, name='post_list'),
     path('consultas/', views.consultas, name='consultas'),
+    path('preview/<int:pk>/', views.post_preview, name='post_preview'),
     path('api/consultas/fx/latest/', views.api_consultas_fx_latest, name='api_consultas_fx_latest'),
     path('api/consultas/fx/range/', views.api_consultas_fx_range, name='api_consultas_fx_range'),
     path('api/consultas/crypto/prices/', views.api_consultas_crypto_prices, name='api_consultas_crypto_prices'),
