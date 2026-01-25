@@ -299,9 +299,9 @@ class PostAdmin(admin.ModelAdmin):
     
     # Preenchimento automático de slug
     prepopulated_fields = {'slug': ('title',)}
-    
-    # Campos que usam ID (para performance se tiver muitos users)
-    raw_id_fields = ('author',)
+
+    # Em posts, preferimos um select com nomes (a base de usuários é pequena)
+    raw_id_fields = ()
 
     class _PostChangeList(ChangeList):
         def get_filters_params(self, params=None):
@@ -347,9 +347,16 @@ class PostAdmin(admin.ModelAdmin):
             # Evita UI de lookup do raw_id no caso de autores
             f.widget = forms.Select()
 
-        # Para admin: também deixa pré-selecionado o próprio usuário (mas editável)
+        # Para admin: lista autores aprovados (ativos) e também permite selecionar admins/superusers
         if _is_admin(request.user) and 'author' in form.base_fields:
-            form.base_fields['author'].initial = request.user.pk
+            f = form.base_fields['author']
+            f.widget = forms.Select()
+            f.queryset = (
+                User.objects.filter(is_active=True, is_staff=True)
+                .select_related('profile')
+                .order_by('first_name', 'last_name', 'username')
+            )
+            f.initial = request.user.pk
 
         return form
 

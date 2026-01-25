@@ -45,6 +45,7 @@
       user-select: none;
       position: relative;
       top: -1px;
+      z-index: 9999;
     }
 
     .oxira-help:hover {
@@ -59,10 +60,11 @@
       left: 50%;
       top: -10px;
       transform: translate(-50%, -100%);
-      background: rgba(17, 24, 39, .96);
-      color: #fff;
+      background: rgba(255, 255, 255, .98);
+      color: rgba(17, 24, 39, .96);
+      border: 1px solid rgba(0,0,0,.08);
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 12px;
       font-weight: 650;
       letter-spacing: 0;
@@ -70,11 +72,12 @@
       width: max-content;
       max-width: 360px;
       white-space: normal;
-      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      box-shadow: 0 18px 45px rgba(0,0,0,.18);
+      backdrop-filter: blur(6px);
       opacity: 0;
       pointer-events: none;
       transition: opacity .12s ease;
-      z-index: 50;
+      z-index: 100000;
     }
 
     .oxira-help[data-tip]::before {
@@ -84,11 +87,12 @@
       top: -10px;
       transform: translate(-50%, -2px);
       border: 6px solid transparent;
-      border-top-color: rgba(17, 24, 39, .96);
+      border-top-color: rgba(255, 255, 255, .98);
+      filter: drop-shadow(0 2px 0 rgba(0,0,0,.06));
       opacity: 0;
       pointer-events: none;
       transition: opacity .12s ease;
-      z-index: 51;
+      z-index: 100001;
     }
 
     .oxira-help:hover::after,
@@ -96,9 +100,234 @@
       opacity: 1;
     }
 
+    /* Evita o tooltip ser cortado por containers com overflow */
+    body.model-post.change-form .card,
+    body.model-post.change-form .module,
+    body.model-post.change-form fieldset.module {
+      overflow: visible !important;
+    }
+
     /* Deixa labels mais “editor” */
     body.model-post.change-form label {
       font-weight: 800;
+    }
+
+    /* ===== Visual clean/moderno (apenas Post) ===== */
+    body.model-post.change-form .oxira-editor-tip {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 8px 24px rgba(0,0,0,.04);
+    }
+
+    /* Cards/fieldsets mais leves */
+    body.model-post.change-form .card,
+    body.model-post.change-form .module,
+    body.model-post.change-form fieldset.module {
+      border-radius: 16px !important;
+      border: 1px solid rgba(0,0,0,.06) !important;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04) !important;
+      overflow: hidden;
+    }
+
+    body.model-post.change-form .card-header,
+    body.model-post.change-form .module h2,
+    body.model-post.change-form fieldset.module > h2 {
+      border-bottom: 1px solid rgba(0,0,0,.06) !important;
+      background: #fff !important;
+    }
+
+    /* Mata aquele “gradeado”/linhas entre campos */
+    body.model-post.change-form .form-row {
+      border-bottom: 0 !important;
+      padding-bottom: 0 !important;
+      margin-bottom: 14px !important;
+    }
+
+    /* Layout: label em cima do campo, tudo mais compacto */
+    body.model-post.change-form .aligned .form-row,
+    body.model-post.change-form .form-row {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 6px;
+    }
+
+    body.model-post.change-form .form-row > div,
+    body.model-post.change-form .form-row .fieldBox,
+    body.model-post.change-form .form-row .flex-container {
+      float: none !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    body.model-post.change-form label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: rgba(17, 24, 39, .92);
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    body.model-post.change-form .help,
+    body.model-post.change-form .helptext,
+    body.model-post.change-form .form-row .help,
+    body.model-post.change-form .form-row .helptext {
+      margin-top: 6px !important;
+      color: rgba(107,114,128,.95) !important;
+      font-size: 12px !important;
+    }
+
+    /* Inputs modernos */
+    body.model-post.change-form input[type="text"],
+    body.model-post.change-form input[type="number"],
+    body.model-post.change-form input[type="url"],
+    body.model-post.change-form input[type="email"],
+    body.model-post.change-form input[type="search"],
+    body.model-post.change-form input[type="datetime-local"],
+    body.model-post.change-form input.vTextField,
+    body.model-post.change-form select,
+    body.model-post.change-form textarea {
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 12px 14px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(0,0,0,.12) !important;
+      background: #fff !important;
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    body.model-post.change-form input::placeholder,
+    body.model-post.change-form textarea::placeholder {
+      color: rgba(156,163,175,.95);
+    }
+
+    body.model-post.change-form input[type="text"]:focus,
+    body.model-post.change-form input[type="number"]:focus,
+    body.model-post.change-form input[type="url"]:focus,
+    body.model-post.change-form input[type="email"]:focus,
+    body.model-post.change-form input[type="search"]:focus,
+    body.model-post.change-form input[type="datetime-local"]:focus,
+    body.model-post.change-form input.vTextField:focus,
+    body.model-post.change-form select:focus,
+    body.model-post.change-form textarea:focus {
+      outline: none !important;
+      border-color: rgba(220,38,38,.65) !important;
+      box-shadow: 0 0 0 4px rgba(220,38,38,.12) !important;
+    }
+
+    /* raw_id_fields (Autor) mais amigável */
+    body.model-post.change-form .related-widget-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    body.model-post.change-form .related-widget-wrapper input {
+      flex: 1 1 220px;
+      min-width: 180px;
+    }
+    body.model-post.change-form .related-widget-wrapper a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,.12);
+      background: #fff;
+      color: rgba(17,24,39,.9);
+      font-weight: 800;
+      text-decoration: none;
+    }
+    body.model-post.change-form .related-widget-wrapper a:hover {
+      border-color: rgba(220,38,38,.35);
+      background: rgba(220,38,38,.05);
+      color: rgba(220,38,38,1);
+    }
+
+    /* CKEditor: borda/raio alinhados ao resto */
+    body.model-post.change-form .cke {
+      border-radius: 16px !important;
+      border: 1px solid rgba(0,0,0,.10) !important;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04) !important;
+    }
+    body.model-post.change-form .cke_top {
+      background: #fff !important;
+      border-bottom: 1px solid rgba(0,0,0,.06) !important;
+    }
+    body.model-post.change-form .cke_contents {
+      background: #fff !important;
+    }
+
+    /* Mobile: deixa o editor utilizável (de quebra-galho) */
+    @media (max-width: 640px) {
+      /* Evita "scroll duplo" e cortes horizontais */
+      body.model-post.change-form #content {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      /* Campos e widgets sempre 100% */
+      body.model-post.change-form .form-row,
+      body.model-post.change-form .aligned,
+      body.model-post.change-form .fieldBox,
+      body.model-post.change-form .form-row .fieldBox,
+      body.model-post.change-form .form-row .flex-container,
+      body.model-post.change-form .form-row input,
+      body.model-post.change-form .form-row select,
+      body.model-post.change-form .form-row textarea {
+        max-width: 100% !important;
+      }
+
+      /* CKEditor: container 100% */
+      body.model-post.change-form .django-ckeditor-widget,
+      body.model-post.change-form .cke,
+      body.model-post.change-form .cke_inner,
+      body.model-post.change-form .cke_contents,
+      body.model-post.change-form .cke_contents iframe {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* CKEditor: toolbar quebra linha e botões maiores */
+      body.model-post.change-form .cke_top {
+        padding: 8px 8px 6px !important;
+      }
+      body.model-post.change-form .cke_toolbox {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px 8px !important;
+      }
+      body.model-post.change-form .cke_toolbar {
+        float: none !important;
+        margin: 0 !important;
+      }
+      body.model-post.change-form .cke_combo,
+      body.model-post.change-form .cke_toolbar_group {
+        margin: 0 !important;
+      }
+      body.model-post.change-form .cke_button,
+      body.model-post.change-form .cke_combo_button {
+        padding: 7px 8px !important;
+      }
+      body.model-post.change-form .cke_button_icon {
+        transform: scale(1.05);
+      }
+
+      /* Área de edição com altura boa no mobile */
+      body.model-post.change-form .cke_contents {
+        min-height: 360px !important;
+      }
+
+      /* Tooltips: não estoura na tela pequena */
+      .oxira-help[data-tip]::after {
+        max-width: min(320px, calc(100vw - 24px));
+      }
     }
   </style>
 {% endblock %}
