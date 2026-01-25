@@ -19,6 +19,36 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _load_dotenv(dotenv_path: Path) -> None:
+    """Carrega variáveis de um .env simples (KEY=VALUE) sem dependências.
+
+    - Não sobrescreve variáveis já definidas no ambiente.
+    - Ignora linhas vazias e comentários (#).
+    """
+    try:
+        if not dotenv_path.exists():
+            return
+        for raw in dotenv_path.read_text(encoding='utf-8').splitlines():
+            line = raw.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if not key:
+                continue
+            if os.environ.get(key) is None:
+                os.environ[key] = value
+    except Exception:
+        # Em dev, não quebra o projeto por causa do .env
+        return
+
+
+_load_dotenv(BASE_DIR / '.env')
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

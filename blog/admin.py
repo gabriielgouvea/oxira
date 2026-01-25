@@ -1,5 +1,3 @@
-import os
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
@@ -7,12 +5,10 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
 from .models import Post, Category, UserProfile, PendingAuthor
 from django.utils.html import format_html
-from django.urls import reverse, path
+from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.admin.views.main import ChangeList
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 
 from django.forms import CheckboxSelectMultiple
 from django.db import models
@@ -407,107 +403,6 @@ class PostAdmin(admin.ModelAdmin):
         if _is_author(request.user):
             obj.author = request.user
         super().save_model(request, obj, form, change)
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                'ai-assistant/',
-                self.admin_site.admin_view(self.ai_assistant_view),
-                name='blog_post_ai_assistant',
-            ),
-        ]
-        return custom_urls + urls
-
-    @require_POST
-    def ai_assistant_view(self, request):
-        if not _is_admin(request.user):
-            return JsonResponse({'ok': False, 'error': 'Sem permissão.'}, status=403)
-
-        api_key = (os.environ.get('OPENAI_API_KEY') or '').strip()
-        if not api_key:
-            return JsonResponse(
-                {
-                    'ok': False,
-                    'error': 'OPENAI_API_KEY não configurada no servidor.',
-                },
-                status=400,
-            )
-
-        action = (request.POST.get('action') or '').strip()
-        title = (request.POST.get('title') or '').strip()
-        subtitle = (request.POST.get('subtitle') or '').strip()
-        angle = (request.POST.get('angle') or '').strip()
-        content = (request.POST.get('content') or '').strip()
-
-        max_chars = 8000
-        if len(content) > max_chars:
-            content = content[:max_chars] + '\n\n[conteúdo truncado]'
-
-        def build_prompt():
-            base = (
-                'Você é um editor-chefe de portal de notícias no Brasil. ' 
-                'Escreva em pt-BR, com tom jornalístico, direto e sem clickbait barato.\n'
-                'Use o contexto abaixo (título/subtítulo/conteúdo) para sugerir melhorias.\n'
-            )
-            ctx = (
-                f"TÍTULO ATUAL: {title or '(vazio)'}\n"
-                f"SUBTÍTULO ATUAL: {subtitle or '(vazio)'}\n"
-                f"ÂNGULO/OBJETIVO: {angle or '(não informado)'}\n"
-                f"CONTEÚDO (pode estar parcial):\n{content or '(vazio)'}\n"
-            )
-
-            if action == 'titles':
-                task = (
-                    'Gere 10 opções de título.\n'
-                    '- Cada título deve caber em até ~80 caracteres.\n'
-                    '- Não use aspas desnecessárias.\n'
-                    '- Retorne SOMENTE uma lista, 1 por linha, começando com "- ".'
-                )
-            elif action == 'subtitles':
-                task = (
-                    'Gere 6 opções de subtítulo (teaser) em 1 frase.\n'
-                    '- Cada um até ~120 caracteres.\n'
-                    '- Retorne SOMENTE uma lista, 1 por linha, começando com "- ".'
-                )
-            elif action == 'lead':
-                task = (
-                    'Escreva um LEAD (primeiro parágrafo) com 2 a 3 frases, ' 
-                    'entregando o essencial e convidando a continuar lendo.\n'
-                    'Retorne SOMENTE o texto do lead.'
-                )
-            elif action == 'seo':
-                task = (
-                    'Crie:\n'
-                    '1) Uma meta descrição (até 160 caracteres).\n'
-                    '2) 8 a 12 palavras-chave separadas por vírgula.\n'
-                    'Retorne exatamente neste formato:\n'
-                    'Meta: ...\n'
-                    'Keywords: ...'
-                )
-            else:
-                task = 'Explique o que você precisa em termos de ação.'
-
-            return base + '\n' + ctx + '\n' + task
-
-        model = (os.environ.get('OPENAI_MODEL') or 'gpt-4o-mini').strip()
-
-        try:
-            from openai import OpenAI
-
-            client = OpenAI(api_key=api_key)
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {'role': 'system', 'content': 'Você é um assistente editorial útil e conciso.'},
-                    {'role': 'user', 'content': build_prompt()},
-                ],
-                temperature=0.7,
-            )
-            text = (resp.choices[0].message.content or '').strip()
-            return JsonResponse({'ok': True, 'result': text})
-        except Exception as e:
-            return JsonResponse({'ok': False, 'error': str(e)}, status=500)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Autor só pode escolher categoria dentre as permitidas
