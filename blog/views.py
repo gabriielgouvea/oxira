@@ -17,6 +17,7 @@ from urllib.error import URLError, HTTPError
 import json
 from datetime import timedelta, datetime
 import hashlib
+import uuid
 
 from .forms import AuthorSignupForm
 from .metrics import get_session_hash, is_safe_http_url, record_post_view
@@ -72,6 +73,91 @@ def post_preview(request, pk: int):
             'author_profile': author_profile,
             'more_from_author': more_from_author,
             'preview_mode': True,
+        },
+    )
+
+
+@staff_member_required
+@require_POST
+def post_preview_draft_set(request: HttpRequest):
+    # Snapshot do form atual (sem salvar no banco). Retorna uma URL de preview.
+    token = uuid.uuid4()
+    key = f"oxira_preview_draft_{token}"
+
+    payload = {
+        'title': (request.POST.get('title') or '').strip(),
+        'subtitle': (request.POST.get('subtitle') or '').strip(),
+        'content': request.POST.get('content') or '',
+        'meta_description': (request.POST.get('meta_description') or '').strip(),
+        'keywords': (request.POST.get('keywords') or '').strip(),
+        'status': (request.POST.get('status') or '').strip(),
+        'published_date': (request.POST.get('published_date') or '').strip(),
+        'author_id': (request.POST.get('author_id') or '').strip(),
+        'category_id': (request.POST.get('category_id') or '').strip(),
+        'created_at': timezone.now().isoformat(),
+    }
+
+    request.session[key] = payload
+    request.session.modified = True
+
+    from django.urls import reverse
+
+    return JsonResponse(
+        {
+            'ok': True,
+            'url': reverse('post_preview_draft', kwargs={'token': token}),
+        },
+        json_dumps_params={'ensure_ascii': False},
+    )
+
+
+@staff_member_required
+def post_preview_draft(request: HttpRequest, token):
+    key = f"oxira_preview_draft_{token}"
+    payload = request.session.get(key) or {}
+    if not payload:
+        return JsonResponse({'ok': False, 'error': 'Preview expirado. Gere novamente.'}, status=404)
+
+    # Monta um objeto Post em memória para reutilizar o template público.
+    post = Post()
+    post.title = payload.get('title') or 'Seu título aqui'
+    post.subtitle = payload.get('subtitle') or ''
+    post.content = payload.get('content') or '<p><em>Seu texto aqui…</em></p>'
+    post.meta_description = payload.get('meta_description') or ''
+    post.keywords = payload.get('keywords') or ''
+    post.status = payload.get('status') or 'draft'
+    post.published_date = timezone.now()
+
+    # Autor
+    author = request.user
+    author_id = payload.get('author_id')
+    if author_id and str(author_id).isdigit():
+        found = get_user_model().objects.filter(pk=int(author_id)).first()
+        if found:
+            author = found
+    post.author = author
+
+    # Categoria
+    category_id = payload.get('category_id')
+    if category_id and str(category_id).isdigit():
+        post.category = Category.objects.filter(pk=int(category_id)).first()
+
+    try:
+        author_profile = post.author.profile
+    except UserProfile.DoesNotExist:
+        author_profile = None
+
+    more_from_author = Post.objects.filter(status='published', author=post.author).order_by('-published_date')[:5]
+
+    return render(
+        request,
+        'blog/post_detail.html',
+        {
+            'post': post,
+            'author_profile': author_profile,
+            'more_from_author': more_from_author,
+            'preview_mode': True,
+            'preview_unsaved': True,
         },
     )
 

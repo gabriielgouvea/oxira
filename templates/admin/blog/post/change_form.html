@@ -113,6 +113,120 @@
       font-weight: 800;
     }
 
+    /* Remove a faixa vermelha padrão do admin (somente Post) */
+    body.model-post.change-form .errornote {
+      display: none !important;
+    }
+
+    /* Modal de erro (popup) */
+    body.model-post.change-form .oxira-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, .55);
+      backdrop-filter: blur(3px);
+      z-index: 200000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    body.model-post.change-form .oxira-modal {
+      width: min(720px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 30px 80px rgba(0,0,0,.35);
+      overflow: hidden;
+    }
+
+    body.model-post.change-form .oxira-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      background: linear-gradient(180deg, rgba(220,38,38,.10), rgba(255,255,255,1));
+    }
+
+    body.model-post.change-form .oxira-modal-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 950;
+      letter-spacing: .2px;
+      color: rgba(17,24,39,.92);
+      margin: 0;
+      font-size: 15px;
+    }
+
+    body.model-post.change-form .oxira-modal-title .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(220,38,38,.14);
+      color: rgba(220,38,38,1);
+      font-weight: 900;
+      border: 1px solid rgba(220,38,38,.18);
+    }
+
+    body.model-post.change-form .oxira-modal-body {
+      padding: 14px 16px 10px;
+      color: rgba(31,41,55,.92);
+      font-size: 13px;
+    }
+
+    body.model-post.change-form .oxira-modal-body .muted {
+      color: rgba(107,114,128,.95);
+      margin-bottom: 10px;
+    }
+
+    body.model-post.change-form .oxira-error-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    body.model-post.change-form .oxira-error-item {
+      border: 1px solid rgba(220,38,38,.16);
+      background: rgba(220,38,38,.06);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    body.model-post.change-form .oxira-error-item strong {
+      display: block;
+      font-weight: 950;
+      margin-bottom: 4px;
+      color: rgba(127,29,29,.98);
+    }
+
+    body.model-post.change-form .oxira-error-item ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    body.model-post.change-form .oxira-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 16px;
+      border-top: 1px solid rgba(0,0,0,.06);
+      background: #fff;
+    }
+
+    body.model-post.change-form .oxira-modal-footer .btn {
+      border-radius: 12px;
+      font-weight: 900;
+    }
+
     /* ===== Visual clean/moderno (apenas Post) ===== */
     body.model-post.change-form .oxira-editor-tip {
       background: #fff;
@@ -463,20 +577,52 @@
   {{ block.super }}
 
   <div style="display:flex;justify-content:flex-end;gap:10px;margin:0 0 12px 0;">
-    {% if change and original and original.pk %}
-      <a
-        href="{% url 'post_preview' original.pk %}"
-        class="btn btn-outline-primary"
-        target="_blank"
-        rel="noopener"
-        style="border-radius:12px;font-weight:900;"
-      >Visualizar no site</a>
-    {% else %}
-      <button type="button" class="btn btn-outline-primary" disabled style="border-radius:12px;font-weight:900;opacity:.55;cursor:not-allowed;">
-        Visualizar no site
-      </button>
-    {% endif %}
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      id="oxira-preview-btn"
+      data-endpoint="{% url 'post_preview_draft_set' %}"
+      style="border-radius:12px;font-weight:900;"
+    >Visualizar no site</button>
   </div>
+
+  {% if adminform.form.errors %}
+    <div class="oxira-modal-backdrop" id="oxira-error-backdrop" role="dialog" aria-modal="true" aria-labelledby="oxira-error-title">
+      <div class="oxira-modal" role="document">
+        <div class="oxira-modal-header">
+          <h2 class="oxira-modal-title" id="oxira-error-title">
+            <span class="badge">!</span>
+            Não foi possível salvar
+          </h2>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="oxira-error-close" aria-label="Fechar">Fechar</button>
+        </div>
+        <div class="oxira-modal-body">
+          <div class="muted">Corrija os campos abaixo e tente salvar novamente.</div>
+
+          <ul class="oxira-error-list">
+            {% if adminform.form.non_field_errors %}
+              <li class="oxira-error-item">
+                <strong>Geral</strong>
+                {{ adminform.form.non_field_errors }}
+              </li>
+            {% endif %}
+
+            {% for field in adminform.form %}
+              {% if field.errors %}
+                <li class="oxira-error-item">
+                  <strong>{{ field.label|default:field.name }}</strong>
+                  {{ field.errors }}
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="oxira-modal-footer">
+          <button type="button" class="btn btn-primary" id="oxira-error-ok">Entendi</button>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {# Mantém o layout do Jazzmin (9 + 3 colunas) e coloca os botões NO FINAL da coluna principal #}
@@ -577,6 +723,137 @@
 
 {% block admin_change_form_document_ready %}
   {{ block.super }}
+  <script>
+    (function () {
+      // Remove/oculta o alerta padrão de erro do admin (faixa vermelha no topo)
+      // para deixar somente o popup de validação.
+      try {
+        const needles = [
+          'please correct the errors below',
+          'por favor',
+          'corrija os erros',
+        ];
+        document.querySelectorAll('.alert.alert-danger, .errornote').forEach(function (el) {
+          const text = (el.textContent || '').toLowerCase();
+          if (!text) return;
+          if (needles.some(function (n) { return text.includes(n); })) {
+            el.style.display = 'none';
+          }
+        });
+      } catch (e) {}
+
+      // Preview: sempre disponível, mesmo sem salvar.
+      function getCSRF() {
+        const el = document.querySelector('input[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+      }
+
+      function getEditorHtml() {
+        try {
+          if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances.id_content) {
+            return CKEDITOR.instances.id_content.getData() || '';
+          }
+        } catch (e) {}
+        const el = document.getElementById('id_content');
+        return el ? (el.value || '') : '';
+      }
+
+      function getPublishedDate() {
+        const d0 = document.getElementById('id_published_date_0');
+        const d1 = document.getElementById('id_published_date_1');
+        if (d0 && d1) {
+          const a = (d0.value || '').trim();
+          const b = (d1.value || '').trim();
+          return (a || b) ? (a + ' ' + b).trim() : '';
+        }
+        const d = document.getElementById('id_published_date');
+        return d ? (d.value || '') : '';
+      }
+
+      async function openPreview() {
+        const btn = document.getElementById('oxira-preview-btn');
+        if (!btn) return;
+        const endpoint = btn.getAttribute('data-endpoint');
+        if (!endpoint) return;
+
+        // Abre imediatamente para evitar bloqueio de popup
+        const win = window.open('about:blank', '_blank');
+        if (!win) {
+          alert('Seu navegador bloqueou o popup. Permita popups para o admin.');
+          return;
+        }
+
+        const body = new URLSearchParams();
+        body.set('title', (document.getElementById('id_title')?.value || '').trim());
+        body.set('subtitle', (document.getElementById('id_subtitle')?.value || '').trim());
+        body.set('content', getEditorHtml());
+        body.set('meta_description', (document.getElementById('id_meta_description')?.value || '').trim());
+        body.set('keywords', (document.getElementById('id_keywords')?.value || '').trim());
+        body.set('status', (document.getElementById('id_status')?.value || '').trim());
+        body.set('published_date', getPublishedDate());
+        body.set('author_id', (document.getElementById('id_author')?.value || '').trim());
+        body.set('category_id', (document.getElementById('id_category')?.value || '').trim());
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+              'X-CSRFToken': getCSRF(),
+            },
+            body: body.toString(),
+            credentials: 'same-origin',
+          });
+          const data = await res.json().catch(function () { return null; });
+          if (!res.ok || !data || !data.ok || !data.url) {
+            win.close();
+            alert((data && data.error) ? data.error : ('Falha ao gerar preview (HTTP ' + res.status + ').'));
+            return;
+          }
+          win.location.href = data.url;
+        } catch (e) {
+          win.close();
+          alert('Falha ao gerar preview.');
+        }
+      }
+
+      const previewBtn = document.getElementById('oxira-preview-btn');
+      if (previewBtn) {
+        previewBtn.addEventListener('click', function () {
+          openPreview();
+        });
+      }
+
+      const backdrop = document.getElementById('oxira-error-backdrop');
+      if (!backdrop) return;
+
+      function close() {
+        backdrop.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+
+      function open() {
+        backdrop.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+
+      const closeBtn = document.getElementById('oxira-error-close');
+      const okBtn = document.getElementById('oxira-error-ok');
+      if (closeBtn) closeBtn.addEventListener('click', close);
+      if (okBtn) okBtn.addEventListener('click', close);
+
+      backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) close();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') close();
+      });
+
+      // Abre automaticamente quando houver erros no form
+      open();
+    })();
+  </script>
   <script>
     (function () {
       const tips = {

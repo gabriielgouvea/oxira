@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 from ckeditor_uploader.fields import RichTextUploadingField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -77,9 +79,9 @@ class Post(models.Model):
         ('scheduled', 'Agendado'),
     )
 
-    title = models.CharField(max_length=200, verbose_name="Título")
+    title = models.CharField(max_length=200, blank=True, verbose_name="Título")
     subtitle = models.CharField(max_length=255, blank=True, verbose_name="Subtítulo")
-    slug = models.SlugField(unique=True, help_text="URL amigável gerada automaticamente")
+    slug = models.SlugField(unique=True, null=True, blank=True, help_text="URL amigável gerada automaticamente")
     
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name="Autor")
     
@@ -106,7 +108,31 @@ class Post(models.Model):
         ordering = ['-published_date']
 
     def __str__(self):
-        return self.title
+        return self.title or f"Post #{self.pk}" if self.pk else "(Sem título)"
+
+    def clean(self):
+        super().clean()
+
+        # Só exige campos obrigatórios quando for PUBLICAR.
+        # Em rascunho/revisão/agendado, pode salvar incompleto.
+        if self.status == 'published':
+            errors = {}
+
+            if not (self.title or '').strip():
+                errors['title'] = 'Informe um título para publicar.'
+
+            # Se não tiver slug, gera a partir do título.
+            if not (self.slug or '').strip() and (self.title or '').strip():
+                base = slugify(self.title) or 'post'
+                candidate = base
+                i = 2
+                while Post.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                    candidate = f"{base}-{i}"
+                    i += 1
+                self.slug = candidate
+
+            if errors:
+                raise ValidationError(errors)
 
 
 class PendingAuthor(User):
