@@ -258,6 +258,30 @@
       margin-bottom: 14px !important;
     }
 
+    /* Botões inline (ex.: inserir anúncio) */
+    body.model-post.change-form .oxira-inline-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.08);
+      background: rgba(17,24,39,.02);
+      color: rgba(17,24,39,.92);
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+    }
+    body.model-post.change-form .oxira-inline-btn:hover {
+      border-color: rgba(220,38,38,.25);
+      background: rgba(220,38,38,.06);
+      color: rgba(220,38,38,1);
+    }
+
     /* Layout: label em cima do campo, tudo mais compacto */
     body.model-post.change-form .aligned .form-row,
     body.model-post.change-form .form-row {

@@ -20,6 +20,11 @@
         img { height: auto; }
         .prose, article { overflow-wrap: anywhere; word-break: break-word; }
         .prose iframe { width: 100%; display: block; margin: 16px auto; border: 0; }
+        .prose iframe[data-oxira-embed="instagram"] { max-width: 540px; height: 700px; }
+        .prose .oxira-embed-instagram { display: flex; justify-content: center; }
+        /* Instagram official embed (blockquote -> iframe via embed.js) */
+        .prose blockquote.instagram-media { margin: 16px auto !important; width: 100% !important; max-width: 540px !important; }
+        .prose blockquote.instagram-media iframe { width: 100% !important; }
         ins.adsbygoogle { display: block; max-width: 100%; overflow: hidden; }
         ins.adsbygoogle iframe { max-width: 100%; }
     </style>
@@ -213,6 +218,26 @@
     </script>
 
     {% block extra_js %}{% endblock %}
+
+    <!-- Instagram embeds (transforma blockquote.instagram-media em mídia) -->
+    <script async src="https://www.instagram.com/embed.js"></script>
+    <script>
+        // Em alguns carregamentos o script chega depois do DOM; força o processamento.
+        (function () {
+            function process() {
+                try {
+                    if (window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process === 'function') {
+                        window.instgrm.Embeds.process();
+                    }
+                } catch (e) {}
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', process);
+            } else {
+                process();
+            }
+        })();
+    </script>
 
 </body>
 </html>

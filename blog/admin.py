@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib import messages as dj_messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
@@ -14,6 +15,12 @@ from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.forms import CheckboxSelectMultiple
 from django.db import models
 from django import forms
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path
+from django.utils import formats
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
 
 def _profile(user):
@@ -279,13 +286,26 @@ class PostAdmin(admin.ModelAdmin):
 
     form = PostAdminForm
 
+    # Remove as faixas padrão (verde/azul/amarelo) para Posts.
+    # A UI de sucesso fica via toast no change_list.html.
+    def message_user(self, request, message, level=dj_messages.INFO, extra_tags='', fail_silently=False):
+        if level < dj_messages.ERROR:
+            return
+        return super().message_user(
+            request,
+            message,
+            level=level,
+            extra_tags=extra_tags,
+            fail_silently=fail_silently,
+        )
+
     class Media:
         js = (
             'admin/js/live_search.js',
         )
 
     # Destaque na Listagem
-    list_display = ('title_display', 'status_badge', 'author', 'category', 'published_date')
+    list_display = ('title_display', 'status_badge', 'author', 'category', 'published_date_short', 'actions_menu')
     list_filter = ()
     search_fields = ('title', 'content', 'subtitle', 'keywords')
     
@@ -301,6 +321,66 @@ class PostAdmin(admin.ModelAdmin):
     # Preenchimento automático de slug
     prepopulated_fields = {'slug': ('title',)}
 
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                '<int:post_id>/oxira-archive/',
+                self.admin_site.admin_view(self.oxira_archive_view),
+                name='blog_post_oxira_archive',
+            ),
+            path(
+                '<int:post_id>/oxira-delete/',
+                self.admin_site.admin_view(self.oxira_delete_view),
+                name='blog_post_oxira_delete',
+            ),
+        ]
+        return custom + urls
+
+    def oxira_archive_view(self, request, post_id: int):
+        if request.method != 'POST':
+            return JsonResponse({'ok': False, 'error': 'Método não permitido.'}, status=405)
+        obj = self.get_queryset(request).filter(pk=post_id).first()
+        if obj is None:
+            # Idempotência: se já não existe, considera OK.
+            return JsonResponse({'ok': True, 'message': 'Matéria não encontrada (provavelmente já foi removida).'} )
+        if not self.has_change_permission(request, obj=obj):
+            return JsonResponse({'ok': False, 'error': 'Sem permissão.'}, status=403)
+
+        obj.status = 'draft'
+        obj.save(update_fields=['status'])
+        return JsonResponse({'ok': True, 'message': 'Matéria arquivada (rascunho).'})
+
+    def oxira_delete_view(self, request, post_id: int):
+        if request.method != 'POST':
+            return JsonResponse({'ok': False, 'error': 'Método não permitido.'}, status=405)
+        obj = self.get_queryset(request).filter(pk=post_id).first()
+        if obj is None:
+            # Idempotência: se já deletou (ou duplo clique), não retorna erro.
+            return JsonResponse({'ok': True, 'message': 'Matéria já estava excluída.'})
+        if not self.has_delete_permission(request, obj=obj):
+            return JsonResponse({'ok': False, 'error': 'Sem permissão.'}, status=403)
+
+        obj_display = str(obj)
+        obj.delete()
+        return JsonResponse({'ok': True, 'message': f'Excluído: {obj_display}.'})
+
+    def _with_toast_param(self, response, toast: str):
+        try:
+            loc = response.get('Location')
+            if not loc:
+                return response
+            parts = urlparse(loc)
+            q = dict(parse_qsl(parts.query, keep_blank_values=True))
+            q['oxira_toast'] = toast
+            new_query = urlencode(q)
+            response['Location'] = urlunparse(
+                (parts.scheme, parts.netloc, parts.path, parts.params, new_query, parts.fragment)
+            )
+        except Exception:
+            return response
+        return response
+
     # Em posts, preferimos um select com nomes (a base de usuários é pequena)
     raw_id_fields = ()
 
@@ -308,6 +388,10 @@ class PostAdmin(admin.ModelAdmin):
         def get_filters_params(self, params=None):
             lookup_params = super().get_filters_params(params=params)
             lookup_params.pop('sort', None)
+            # Param de UI (toast). Não pode entrar como lookup de queryset,
+            # senão o Django Admin considera parâmetro inválido e cai no fluxo
+            # `IncorrectLookupParameters` (que usa SimpleTemplateResponse sem request).
+            lookup_params.pop('oxira_toast', None)
             return lookup_params
 
     def get_changelist(self, request, **kwargs):
@@ -398,12 +482,29 @@ class PostAdmin(admin.ModelAdmin):
         # Botão customizado: salva forçando rascunho
         if '_save_draft' in request.POST:
             obj.status = 'draft'
-            self.message_user(request, 'Salvo como rascunho.')
+            setattr(request, '_oxira_toast', 'draft_saved')
+        else:
+            # Qualquer outro save cai como "salvo"
+            setattr(request, '_oxira_toast', 'saved')
 
         # Autor sempre salva como ele mesmo
         if _is_author(request.user):
             obj.author = request.user
         super().save_model(request, obj, form, change)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        response = super().response_add(request, obj, post_url_continue=post_url_continue)
+        toast = getattr(request, '_oxira_toast', None)
+        if toast and response.status_code in (301, 302) and response.get('Location'):
+            return self._with_toast_param(response, toast)
+        return response
+
+    def response_change(self, request, obj):
+        response = super().response_change(request, obj)
+        toast = getattr(request, '_oxira_toast', None)
+        if toast and response.status_code in (301, 302) and response.get('Location'):
+            return self._with_toast_param(response, toast)
+        return response
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         form_field = super().formfield_for_dbfield(db_field, request, **kwargs)
@@ -467,6 +568,37 @@ class PostAdmin(admin.ModelAdmin):
         )
     status_badge.short_description = 'Status'
     status_badge.allow_tags = True
+
+    def published_date_short(self, obj):
+        if not obj.published_date:
+            return '-'
+        # Ex: 19/01/26 (economiza espaço na listagem)
+        return formats.date_format(obj.published_date, 'd/m/y')
+    published_date_short.short_description = 'Data de Publicação'
+
+    def actions_menu(self, obj):
+        archive_url = reverse('admin:blog_post_oxira_archive', args=[obj.pk])
+        delete_url = reverse('admin:blog_post_oxira_delete', args=[obj.pk])
+        return format_html(
+            '<div class="oxira-row-actions" data-post-title="{}">'
+            '  <button class="oxira-row-actions-btn" type="button" aria-label="Ações">'
+            '    <i class="fas fa-ellipsis-h"></i>'
+            '  </button>'
+            '  <div class="oxira-row-actions-menu" role="menu">'
+            '    <button type="button" class="oxira-row-act" data-action="archive" data-url="{}">'
+            '      <i class="fas fa-archive"></i> Arquivar'
+            '    </button>'
+            '    <div class="oxira-row-actions-divider"></div>'
+            '    <button type="button" class="oxira-row-act danger" data-action="delete" data-url="{}">'
+            '      <i class="fas fa-trash"></i> Excluir'
+            '    </button>'
+            '  </div>'
+            '</div>',
+            (obj.title or 'Sem título'),
+            archive_url,
+            delete_url,
+        )
+    actions_menu.short_description = ''
     
     def title_display(self, obj):
         return format_html(

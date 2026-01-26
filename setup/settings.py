@@ -166,12 +166,26 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 
 CKEDITOR_CONFIGS = {
     'default': {
-        'toolbar': 'full',
+        # Toolbar custom (mantém o “jeitão completo”, mas inclui nossos botões)
+        'toolbar': 'oxira',
+        'toolbar_oxira': [
+            {'name': 'clipboard', 'items': ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']},
+            {'name': 'editing', 'items': ['Find', 'Replace', '-', 'SelectAll']},
+            {'name': 'basicstyles', 'items': ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat']},
+            {'name': 'paragraph', 'items': ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock']},
+            {'name': 'links', 'items': ['Link', 'Unlink', 'Anchor']},
+            {'name': 'insert', 'items': ['Image', 'Table', 'HorizontalRule', 'SpecialChar', '-', 'OxiraAdBreak', 'OxiraInstagram']},
+            {'name': 'styles', 'items': ['Format', 'Font', 'FontSize']},
+            {'name': 'colors', 'items': ['TextColor', 'BGColor']},
+            {'name': 'tools', 'items': ['Maximize', 'ShowBlocks', '-', 'Source']},
+        ],
         'height': 500,
         'width': '100%',
         # Permite embed por iframe (ex.: Instagram) sem liberar scripts.
         # Use junto com renderização do conteúdo como HTML (|safe) nos templates.
-        'extraAllowedContent': 'iframe[*]{*}(*)',
+        'extraAllowedContent': 'iframe[*]{*}(*) ; blockquote[*]{*}(*) ; a[*]{*}(*)',
+        # Plugin do Oxira (botões no toolbar)
+        'extraPlugins': 'oxiraembed',
     },
 }
 

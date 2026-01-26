@@ -12,6 +12,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+import re
+
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import json
@@ -22,6 +24,53 @@ import uuid
 from .forms import AuthorSignupForm
 from .metrics import get_session_hash, is_safe_http_url, record_post_view
 from .models import Category, EngagementEvent, LinkClick, Post, UserProfile
+
+
+_AD_MARKER_RE = re.compile(
+    r'<hr[^>]*class=["\"][^"\"]*\boxira-ad-break\b[^"\"]*["\"][^>]*>',
+    re.IGNORECASE,
+)
+
+
+def _inarticle_ad_block_html() -> str:
+    # Placeholder (sem AdSense real). Substitua o miolo quando tiver o script/unidade.
+    return (
+        '<div class="oxira-inarticle-ad my-10">'
+        '  <div class="flex items-center gap-4 text-[11px] font-extrabold tracking-widest text-gray-400 uppercase">'
+        '    <span class="h-px flex-1 bg-gray-200"></span>'
+        '    <span>Publicidade</span>'
+        '    <span class="h-px flex-1 bg-gray-200"></span>'
+        '  </div>'
+        '  <div class="my-5 flex justify-center">'
+        '    <div data-oxira-ad="inarticle" class="w-full max-w-[728px] bg-gray-100 border border-gray-200 rounded-sm px-4 py-10 text-center text-sm text-gray-400">'
+        '      Espaço reservado para Google Ads (In-Article)'
+        '    </div>'
+        '  </div>'
+        '  <div class="flex items-center gap-4 text-[11px] font-extrabold tracking-widest text-gray-400 uppercase">'
+        '    <span class="h-px flex-1 bg-gray-200"></span>'
+        '    <span>Continua depois da publicidade</span>'
+        '    <span class="h-px flex-1 bg-gray-200"></span>'
+        '  </div>'
+        '</div>'
+    )
+
+
+def _inject_inarticle_ad(html: str) -> str:
+    if not html:
+        return html
+
+    # Evita duplicar se já foi injetado.
+    if 'oxira-inarticle-ad' in html:
+        return html
+
+    ad_html = _inarticle_ad_block_html()
+
+    # Caso explícito (marcador no editor)
+    if _AD_MARKER_RE.search(html):
+        return _AD_MARKER_RE.sub(ad_html, html)
+
+    # Sem marcador, não mostra anúncio.
+    return html
 
 def post_list(request):
     posts = Post.objects.filter(status='published').order_by('-published_date')
@@ -43,10 +92,17 @@ def post_detail(request, slug):
         .exclude(pk=post.pk)
         .order_by('-published_date')[:5]
     )
+
+    rendered_content = _inject_inarticle_ad(post.content)
     return render(
         request,
         'blog/post_detail.html',
-        {'post': post, 'author_profile': author_profile, 'more_from_author': more_from_author},
+        {
+            'post': post,
+            'author_profile': author_profile,
+            'more_from_author': more_from_author,
+            'rendered_content': rendered_content,
+        },
     )
 
 
@@ -65,6 +121,8 @@ def post_preview(request, pk: int):
         .order_by('-published_date')[:5]
     )
 
+    rendered_content = _inject_inarticle_ad(post.content)
+
     return render(
         request,
         'blog/post_detail.html',
@@ -72,6 +130,7 @@ def post_preview(request, pk: int):
             'post': post,
             'author_profile': author_profile,
             'more_from_author': more_from_author,
+            'rendered_content': rendered_content,
             'preview_mode': True,
         },
     )
@@ -137,6 +196,8 @@ def post_preview_draft(request: HttpRequest, token):
             author = found
     post.author = author
 
+    rendered_content = _inject_inarticle_ad(post.content)
+
     # Categoria
     category_id = payload.get('category_id')
     if category_id and str(category_id).isdigit():
@@ -156,6 +217,7 @@ def post_preview_draft(request: HttpRequest, token):
             'post': post,
             'author_profile': author_profile,
             'more_from_author': more_from_author,
+            'rendered_content': rendered_content,
             'preview_mode': True,
             'preview_unsaved': True,
         },

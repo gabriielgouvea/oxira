@@ -51,11 +51,13 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    # Em bases existentes pode haver usuários sem perfil (ex.: superuser criado antes da migração).
+    profile, _ = UserProfile.objects.get_or_create(user=instance)
+    profile.save()
 
 class Category(models.Model):
     name = models.CharField(max_length=100)

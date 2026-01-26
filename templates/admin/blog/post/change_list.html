@@ -49,6 +49,115 @@
 			.oxira-sort-divider { height: 1px; background: rgba(0,0,0,.08); margin: 6px 4px; }
 			.oxira-sort-item.active { background: rgba(17,24,39,.06); }
 			.oxira-sort-item.active::before { content: "✓ "; color: #16a34a; font-weight: 900; }
+
+			/* ===== Ações por linha (3 pontinhos) ===== */
+			.oxira-row-actions { position: relative; display: inline-flex; justify-content: center; }
+			.oxira-row-actions-btn {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 34px;
+				height: 34px;
+				border-radius: 999px;
+				border: 1px solid rgba(0,0,0,.08);
+				background: #fff;
+				color: rgba(17,24,39,.75);
+				cursor: pointer;
+			}
+			.oxira-row-actions-btn:hover { background: rgba(220,38,38,.06); color: rgba(220,38,38,1); border-color: rgba(220,38,38,.22); }
+			.oxira-row-actions-menu {
+				display: none;
+				position: absolute;
+				right: 0;
+				top: calc(100% + 8px);
+				min-width: 220px;
+				background: #fff;
+				border: 1px solid rgba(0,0,0,.10);
+				border-radius: 12px;
+				box-shadow: 0 18px 40px rgba(0,0,0,.18);
+				padding: 6px;
+				z-index: 1200;
+			}
+			.oxira-row-actions.open .oxira-row-actions-menu { display: block; }
+			.oxira-row-act {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				width: 100%;
+				border: 0;
+				background: transparent;
+				text-align: left;
+				padding: 10px 10px;
+				border-radius: 10px;
+				font-weight: 800;
+				color: rgba(17,24,39,.92);
+				cursor: pointer;
+			}
+			.oxira-row-act:hover { background: rgba(220,38,38,.06); color: rgba(220,38,38,1); }
+			.oxira-row-act.danger { color: rgba(185,28,28,1); }
+			.oxira-row-act.danger:hover { background: rgba(185,28,28,.08); }
+			.oxira-row-actions-divider { height: 1px; background: rgba(0,0,0,.08); margin: 6px 4px; }
+
+			/* ===== Modal bonito ===== */
+			.oxira-modal-backdrop {
+				position: fixed;
+				inset: 0;
+				background: rgba(17, 24, 39, .55);
+				backdrop-filter: blur(5px);
+				z-index: 200000;
+				display: none;
+				align-items: center;
+				justify-content: center;
+				padding: 18px;
+			}
+			.oxira-modal {
+				width: min(560px, 100%);
+				background: #fff;
+				border-radius: 18px;
+				border: 1px solid rgba(0,0,0,.08);
+				box-shadow: 0 30px 80px rgba(0,0,0,.35);
+				overflow: hidden;
+			}
+			.oxira-modal-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 12px;
+				padding: 14px 16px;
+				border-bottom: 1px solid rgba(0,0,0,.06);
+				background: linear-gradient(180deg, rgba(220,38,38,.10), rgba(255,255,255,1));
+			}
+			.oxira-modal-title { margin: 0; font-weight: 950; letter-spacing: .2px; color: rgba(17,24,39,.92); font-size: 15px; }
+			.oxira-modal-body { padding: 14px 16px 10px; color: rgba(31,41,55,.92); font-size: 13px; }
+			.oxira-modal-body .muted { color: rgba(107,114,128,.95); margin-bottom: 10px; }
+			.oxira-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding: 12px 16px; border-top: 1px solid rgba(0,0,0,.06); }
+			.oxira-modal-footer .btn { border-radius: 12px; font-weight: 900; }
+
+			/* ===== Toasts ===== */
+			.oxira-toast-wrap {
+				position: fixed;
+				top: 14px;
+				right: 14px;
+				z-index: 250000;
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+			.oxira-toast {
+				background: rgba(17, 24, 39, .92);
+				color: #fff;
+				border-radius: 14px;
+				padding: 12px 14px;
+				min-width: 280px;
+				max-width: 360px;
+				box-shadow: 0 18px 45px rgba(0,0,0,.28);
+				border: 1px solid rgba(255,255,255,.12);
+			}
+			.oxira-toast .title { font-weight: 950; letter-spacing: .2px; margin-bottom: 3px; }
+			.oxira-toast .desc { color: rgba(229,231,235,.92); font-size: 12px; }
+			.oxira-toast.success { background: rgba(22, 163, 74, .92); }
+			.oxira-toast.warn { background: rgba(245, 158, 11, .95); }
+			.oxira-toast.danger { background: rgba(220, 38, 38, .92); }
 		</style>
 
 		<div class="oxira-sort">
@@ -135,6 +244,203 @@
 			document.addEventListener('keydown', function (e) {
 				if (e.key === 'Escape') closeMenu();
 			});
+		})();
+	</script>
+
+	<div class="oxira-modal-backdrop" id="oxiraRowModal">
+		<div class="oxira-modal" role="dialog" aria-modal="true" aria-labelledby="oxiraRowModalTitle">
+			<div class="oxira-modal-header">
+				<h3 class="oxira-modal-title" id="oxiraRowModalTitle">Confirmar ação</h3>
+				<button type="button" class="btn btn-light btn-sm" id="oxiraRowModalClose" aria-label="Fechar">✕</button>
+			</div>
+			<div class="oxira-modal-body">
+				<div class="muted" id="oxiraRowModalDesc"></div>
+				<div id="oxiraRowModalPost" style="font-weight:950;"></div>
+			</div>
+			<div class="oxira-modal-footer">
+				<button type="button" class="btn btn-light" id="oxiraRowModalCancel">Cancelar</button>
+				<button type="button" class="btn btn-danger" id="oxiraRowModalConfirm">Confirmar</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="oxira-toast-wrap" id="oxiraToastWrap" aria-live="polite" aria-atomic="true"></div>
+
+	<script>
+		(function () {
+			function getCookie(name) {
+				try {
+					const value = ('; ' + document.cookie).split('; ' + name + '=').pop();
+					if (!value) return '';
+					return value.split(';')[0] || '';
+				} catch (e) {
+					return '';
+				}
+			}
+
+			function getCSRF() {
+				const el = document.querySelector('input[name=csrfmiddlewaretoken]');
+				if (el && el.value) return el.value;
+				return getCookie('csrftoken');
+			}
+
+			// Esconde as faixas padrão do Django admin nesta tela.
+			try {
+				document.querySelectorAll('#jazzy-messages, .messagelist, .messagelist li, .alert, .alert-success, .alert-info, .alert-warning, .alert-danger').forEach(function (el) {
+					el.style.display = 'none';
+				});
+			} catch (e) {}
+
+			function toast(kind, title, desc) {
+				const wrap = document.getElementById('oxiraToastWrap');
+				if (!wrap) return;
+				const el = document.createElement('div');
+				el.className = 'oxira-toast ' + (kind || '');
+				el.innerHTML = '<div class="title"></div><div class="desc"></div>';
+				el.querySelector('.title').textContent = title || '';
+				el.querySelector('.desc').textContent = desc || '';
+				wrap.appendChild(el);
+				setTimeout(function () {
+					el.style.transition = 'opacity .18s ease, transform .18s ease';
+					el.style.opacity = '0';
+					el.style.transform = 'translateY(-6px)';
+					setTimeout(function () { try { el.remove(); } catch (e) {} }, 220);
+				}, 3200);
+			}
+
+			// Toast vindo do redirect após salvar/rascunho
+			try {
+				const url = new URL(window.location.href);
+				const v = url.searchParams.get('oxira_toast');
+				if (v) {
+					if (v === 'draft_saved') toast('warn', 'Rascunho salvo', 'Sua matéria foi arquivada como rascunho.');
+					if (v === 'saved') toast('success', 'Salvo', 'Alterações salvas com sucesso.');
+					url.searchParams.delete('oxira_toast');
+					url.searchParams.delete('e');
+					window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+				}
+			} catch (e) {}
+
+			// Dropdown de ações por linha
+			function closeAllMenus(except) {
+				document.querySelectorAll('.oxira-row-actions.open').forEach(function (w) {
+					if (except && w === except) return;
+					w.classList.remove('open');
+				});
+			}
+
+			document.addEventListener('click', function (e) {
+				const btn = e.target.closest('.oxira-row-actions-btn');
+				if (btn) {
+					e.preventDefault();
+					e.stopPropagation();
+					const wrap = btn.closest('.oxira-row-actions');
+					if (!wrap) return;
+					const isOpen = wrap.classList.contains('open');
+					closeAllMenus(wrap);
+					wrap.classList.toggle('open', !isOpen);
+					return;
+				}
+
+				const act = e.target.closest('.oxira-row-act');
+				if (!act) {
+					closeAllMenus();
+					return;
+				}
+				e.preventDefault();
+				e.stopPropagation();
+				closeAllMenus();
+				openConfirm(act);
+			});
+
+			document.addEventListener('keydown', function (e) {
+				if (e.key === 'Escape') {
+					closeAllMenus();
+					closeModal();
+				}
+			});
+
+			// Modal
+			const modal = document.getElementById('oxiraRowModal');
+			const btnClose = document.getElementById('oxiraRowModalClose');
+			const btnCancel = document.getElementById('oxiraRowModalCancel');
+			const btnConfirm = document.getElementById('oxiraRowModalConfirm');
+			const titleEl = document.getElementById('oxiraRowModalTitle');
+			const descEl = document.getElementById('oxiraRowModalDesc');
+			const postEl = document.getElementById('oxiraRowModalPost');
+
+			let pending = null;
+
+			function closeModal() {
+				if (!modal) return;
+				modal.style.display = 'none';
+				document.body.style.overflow = '';
+				pending = null;
+			}
+			function openModal() {
+				if (!modal) return;
+				modal.style.display = 'flex';
+				document.body.style.overflow = 'hidden';
+			}
+			if (btnClose) btnClose.addEventListener('click', closeModal);
+			if (btnCancel) btnCancel.addEventListener('click', closeModal);
+			if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+			function openConfirm(actionBtn) {
+				const wrap = actionBtn.closest('.oxira-row-actions');
+				const postTitle = (wrap && wrap.getAttribute('data-post-title')) ? wrap.getAttribute('data-post-title') : 'Esta matéria';
+				const action = actionBtn.getAttribute('data-action');
+				const url = actionBtn.getAttribute('data-url');
+				pending = { action: action, url: url, title: postTitle };
+
+				if (action === 'archive') {
+					titleEl.textContent = 'Arquivar matéria?';
+					descEl.textContent = 'Isso vai mover a matéria para Rascunho (não aparece no site).';
+					btnConfirm.className = 'btn btn-warning';
+					btnConfirm.textContent = 'Arquivar';
+				}
+				if (action === 'delete') {
+					titleEl.textContent = 'Excluir matéria?';
+					descEl.textContent = 'Essa ação é permanente e não pode ser desfeita.';
+					btnConfirm.className = 'btn btn-danger';
+					btnConfirm.textContent = 'Excluir';
+				}
+				postEl.textContent = postTitle;
+				openModal();
+			}
+
+			async function doPost(url) {
+				const res = await fetch(url, {
+					method: 'POST',
+					headers: { 'X-CSRFToken': getCSRF() },
+					credentials: 'same-origin'
+				});
+				let data = null;
+				try { data = await res.json(); } catch (e) {}
+				if (!res.ok || !data || !data.ok) {
+					throw new Error((data && data.error) ? data.error : ('Falha (HTTP ' + res.status + ')'));
+				}
+				return data;
+			}
+
+			if (btnConfirm) {
+				btnConfirm.addEventListener('click', async function () {
+					if (!pending || !pending.url) return;
+					const action = pending.action;
+					btnConfirm.disabled = true;
+					try {
+						const data = await doPost(pending.url);
+						closeModal();
+						if (action === 'archive') toast('warn', 'Arquivado', data.message || 'Matéria arquivada.');
+						if (action === 'delete') toast('danger', 'Excluído', data.message || 'Matéria excluída.');
+						setTimeout(function () { window.location.reload(); }, 500);
+					} catch (err) {
+						toast('danger', 'Ops', (err && err.message) ? err.message : 'Falha na ação.');
+					} finally {
+						btnConfirm.disabled = false;
+					}
+				});
+			}
 		})();
 	</script>
 {% endblock %}
