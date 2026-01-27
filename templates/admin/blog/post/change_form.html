@@ -6,6 +6,7 @@
 
 {% block extrahead %}
   {{ block.super }}
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
   <style>
     /* Página do Post: limpa o topo (breadcrumbs) e dá um ar mais "editor" */
     body.model-post.change-form .content-header,
@@ -280,6 +281,143 @@
       border-color: rgba(220,38,38,.25);
       background: rgba(220,38,38,.06);
       color: rgba(220,38,38,1);
+    }
+
+    /* Cropper (Imagem de destaque) */
+    body.model-post.change-form .oxira-cropper-wrap {
+      margin-top: 10px;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04);
+    }
+    body.model-post.change-form .oxira-cropper-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      background: linear-gradient(180deg, rgba(220,38,38,.06), rgba(255,255,255,1));
+    }
+    body.model-post.change-form .oxira-cropper-head .title {
+      font-weight: 950;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(17,24,39,.92);
+    }
+    body.model-post.change-form .oxira-cropper-head .hint {
+      font-size: 12px;
+      color: rgba(107,114,128,.95);
+    }
+    body.model-post.change-form .oxira-cropper-stage {
+      max-height: 520px;
+      background: rgba(17,24,39,.02);
+    }
+    body.model-post.change-form .oxira-cropper-stage img {
+      display: block;
+      max-width: 100%;
+    }
+    body.model-post.change-form .oxira-cropper-actions {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(0,0,0,.06);
+      justify-content: flex-end;
+      background: #fff;
+    }
+
+    /* Upload bonito (Imagem destacada) */
+    body.model-post.change-form .oxira-upload-wrap {
+      margin-top: 10px;
+      border: 1px dashed rgba(0,0,0,.18);
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04);
+    }
+    body.model-post.change-form .oxira-upload-drop {
+      position: relative;
+      padding: 18px 16px;
+      background: linear-gradient(180deg, rgba(220,38,38,.06), rgba(255,255,255,1));
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    body.model-post.change-form .oxira-upload-drop.is-dragover {
+      background: rgba(220,38,38,.10);
+      border-color: rgba(220,38,38,.35);
+    }
+    body.model-post.change-form .oxira-upload-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    body.model-post.change-form .oxira-upload-plus {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(220,38,38,.22);
+      background: rgba(220,38,38,.10);
+      color: rgba(220,38,38,1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 950;
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+    body.model-post.change-form .oxira-upload-text {
+      min-width: 0;
+    }
+    body.model-post.change-form .oxira-upload-title {
+      font-weight: 950;
+      color: rgba(17,24,39,.92);
+    }
+    body.model-post.change-form .oxira-upload-sub {
+      margin-top: 2px;
+      color: rgba(107,114,128,.95);
+      font-size: 12px;
+    }
+    body.model-post.change-form .oxira-upload-actions {
+      display: flex;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+    body.model-post.change-form .oxira-upload-actions .button {
+      border-radius: 12px;
+      font-weight: 900;
+    }
+    body.model-post.change-form .oxira-upload-preview {
+      display: none;
+      border-top: 1px solid rgba(0,0,0,.06);
+      background: rgba(17,24,39,.02);
+      padding: 12px;
+    }
+    body.model-post.change-form .oxira-upload-preview img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      object-fit: cover;
+      aspect-ratio: 16 / 9;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+
+    /* Quando a UI Oxira está ativa, esconde o input nativo (botão cinza) */
+    body.model-post.change-form .oxira-upload-wrap p.file-upload,
+    body.model-post.change-form .oxira-upload-wrap .file-upload {
+      position: absolute !important;
+      left: -9999px !important;
+      width: 1px !important;
+      height: 1px !important;
+      overflow: hidden !important;
     }
 
     /* Layout: label em cima do campo, tudo mais compacto */
@@ -1073,6 +1211,375 @@
         bindEvents();
         updateChecklist();
       }, 800);
+    })();
+  </script>
+
+  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <script>
+    (function () {
+      function qs(sel, root) { return (root || document).querySelector(sel); }
+
+      try { console.log('[Oxira] cropper(post) init'); } catch (e) {}
+
+      function isCropperAvailable() {
+        const ok = typeof window.Cropper !== 'undefined';
+        if (!ok) {
+          try { console.warn('[Oxira] Cropper não carregou (CDN bloqueado/offline?).'); } catch (e) {}
+        }
+        return ok;
+      }
+
+      const xInput = qs('input[name="image_crop_x"]');
+      const yInput = qs('input[name="image_crop_y"]');
+      const wInput = qs('input[name="image_crop_w"]');
+      const hInput = qs('input[name="image_crop_h"]');
+      if (!xInput || !yInput || !wInput || !hInput) {
+        try { console.warn('[Oxira] cropper(post) inputs hidden de crop não encontrados no HTML'); } catch (e) {}
+        return;
+      }
+
+      let cropper = null;
+      let wrap = null;
+      let img = null;
+      let activeInput = null;
+      let activeForm = null;
+
+      function enhanceUploadUI(inputEl) {
+        try {
+          const p = inputEl.closest('p.file-upload') || inputEl.closest('.file-upload') || inputEl.parentElement;
+          if (!p || p.dataset.oxiraUploadEnhanced === '1') return;
+          p.dataset.oxiraUploadEnhanced = '1';
+
+          const wrap = document.createElement('div');
+          wrap.className = 'oxira-upload-wrap';
+
+          const drop = document.createElement('div');
+          drop.className = 'oxira-upload-drop';
+          drop.innerHTML = [
+            '<div class="oxira-upload-left">',
+            '  <div class="oxira-upload-plus">+</div>',
+            '  <div class="oxira-upload-text">',
+            '    <div class="oxira-upload-title">Enviar imagem destacada</div>',
+            '    <div class="oxira-upload-sub">Arraste e solte aqui, ou clique para escolher (recomendado 1280×720).</div>',
+            '  </div>',
+            '</div>',
+            '<div class="oxira-upload-actions">',
+            '  <button type="button" class="button" data-action="choose">Escolher</button>',
+            '  <button type="button" class="button" data-action="remove">Remover</button>',
+            '</div>'
+          ].join('');
+
+          const preview = document.createElement('div');
+          preview.className = 'oxira-upload-preview';
+          preview.innerHTML = '<img alt="Prévia da imagem">';
+          const previewImg = preview.querySelector('img');
+
+          p.parentNode.insertBefore(wrap, p);
+          wrap.appendChild(drop);
+          wrap.appendChild(preview);
+          wrap.appendChild(p);
+
+          function setPreview(url) {
+            if (!url) {
+              preview.style.display = 'none';
+              previewImg.removeAttribute('src');
+              return;
+            }
+            preview.style.display = 'block';
+            previewImg.src = url;
+          }
+
+          // Prévia se já existe arquivo atual
+          try {
+            const link = p.querySelector('a');
+            const url = link ? link.getAttribute('href') : '';
+            if (url) setPreview(url);
+          } catch (e) {}
+
+          function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            setPreview(url);
+          }
+
+          drop.addEventListener('click', function (e) {
+            const btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
+            const action = btn ? btn.getAttribute('data-action') : null;
+            if (!action) {
+              inputEl.click();
+              return;
+            }
+            if (action === 'choose') {
+              inputEl.click();
+              return;
+            }
+            if (action === 'remove') {
+              const clear = qs('#image-clear_id') || qs('input[type="checkbox"][id$="image-clear_id"]');
+              if (clear) {
+                clear.checked = true;
+                clear.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              inputEl.value = '';
+              setPreview('');
+              return;
+            }
+          });
+
+          drop.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            drop.classList.add('is-dragover');
+          });
+          drop.addEventListener('dragleave', function () {
+            drop.classList.remove('is-dragover');
+          });
+          drop.addEventListener('drop', function (e) {
+            e.preventDefault();
+            drop.classList.remove('is-dragover');
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (!file) return;
+            try {
+              const dt = new DataTransfer();
+              dt.items.add(file);
+              inputEl.files = dt.files;
+            } catch (err) {
+              // fallback: não consegue setar files programaticamente
+            }
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+            handleFile(file);
+          });
+
+          inputEl.addEventListener('change', function () {
+            const file = inputEl.files && inputEl.files[0];
+            handleFile(file);
+          });
+        } catch (e) {}
+      }
+
+      function destroy() {
+        try { if (cropper) cropper.destroy(); } catch (e) {}
+        cropper = null;
+        if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        wrap = null;
+        img = null;
+      }
+
+      function ensureUI() {
+        if (wrap) return wrap;
+
+        wrap = document.createElement('div');
+        wrap.className = 'oxira-cropper-wrap';
+        wrap.innerHTML = [
+          '<div class="oxira-cropper-head">',
+          '  <div>',
+          '    <div class="title">Enquadrar imagem</div>',
+          '    <div class="hint">Arraste, dê zoom e posicione (16:9). Ao salvar, aplica o recorte.</div>',
+          '  </div>',
+          '  <div class="hint">Dica: roda do mouse = zoom</div>',
+          '</div>',
+          '<div class="oxira-cropper-stage">',
+          '  <div class="oxira-cropper-empty" style="padding:14px 12px;color:rgba(107,114,128,.95);font-size:13px;">',
+          '    Escolha uma imagem para aparecer o enquadramento aqui.',
+          '  </div>',
+          '  <img alt="Prévia do recorte" style="display:none">',
+          '</div>',
+          '<div class="oxira-cropper-actions">',
+          '  <button type="button" class="button" data-action="reset">Reset</button>',
+          '  <button type="button" class="button" data-action="clear">Remover recorte</button>',
+          '</div>'
+        ].join('');
+
+        const host = activeInput ? (activeInput.closest('p.file-upload') || activeInput.closest('.file-upload') || activeInput) : null;
+        const container = host ? (host.parentElement || document.body) : document.body;
+        if (host && host.parentNode) {
+          host.insertAdjacentElement('afterend', wrap);
+        } else {
+          container.appendChild(wrap);
+        }
+
+        img = wrap.querySelector('img');
+
+        wrap.addEventListener('click', function (e) {
+          const btn = e.target && e.target.closest && e.target.closest('button[data-action]');
+          if (!btn) return;
+          const action = btn.getAttribute('data-action');
+          if (action === 'reset' && cropper) cropper.reset();
+          if (action === 'clear') {
+            xInput.value = '';
+            yInput.value = '';
+            wInput.value = '';
+            hInput.value = '';
+            destroy();
+            fileInput.value = '';
+          }
+        });
+
+        return wrap;
+      }
+
+      function initCropperFromUrl(url) {
+        if (!url) return;
+        ensureUI();
+        try {
+          const empty = wrap ? wrap.querySelector('.oxira-cropper-empty') : null;
+          if (empty) empty.style.display = 'none';
+          if (img) img.style.display = 'block';
+        } catch (e) {}
+        img.onload = function () {
+          try { if (cropper) cropper.destroy(); } catch (e) {}
+          try {
+            if (!isCropperAvailable()) return;
+            cropper = new Cropper(img, {
+              aspectRatio: 16 / 9,
+              viewMode: 1,
+              autoCropArea: 1,
+              dragMode: 'move',
+              background: false,
+              responsive: true,
+              zoomOnWheel: true,
+              movable: true,
+              scalable: false,
+              rotatable: false,
+              crop: function () { setCropBoxValues(); },
+              ready: function () { setCropBoxValues(); },
+            });
+          } catch (e) {
+            // Se o CDN bloquear ou houver CSP, não quebra o admin.
+          }
+        };
+        img.src = url;
+      }
+
+      function setCropBoxValues() {
+        if (!cropper) return;
+        try {
+          const data = cropper.getData(true);
+          xInput.value = Math.max(0, Math.round(data.x || 0));
+          yInput.value = Math.max(0, Math.round(data.y || 0));
+          wInput.value = Math.max(1, Math.round(data.width || 1));
+          hInput.value = Math.max(1, Math.round(data.height || 1));
+        } catch (e) {}
+      }
+
+      function initCropperFromFile(file) {
+        if (!file) {
+          // Não destrói automaticamente: pode existir imagem atual.
+          return;
+        }
+
+        ensureUI();
+        const url = URL.createObjectURL(file);
+        initCropperFromUrl(url);
+      }
+
+      function setupForInput(inputEl) {
+        if (!inputEl || inputEl === activeInput) return;
+        activeInput = inputEl;
+        activeForm = activeInput.closest('form');
+        if (!activeForm) return;
+
+        // Mostra o painel mesmo antes de escolher arquivo
+        ensureUI();
+
+        // Upload bonito
+        enhanceUploadUI(activeInput);
+
+        // Se já existe imagem salva, permite recortar sem reupload.
+        try {
+          const scope = activeInput.closest('.form-row')
+            || activeInput.closest('.field-image')
+            || activeInput.parentElement
+            || document;
+          const currentLink = scope.querySelector('.file-upload a');
+          const currentUrl = currentLink ? currentLink.getAttribute('href') : '';
+          if (currentUrl) initCropperFromUrl(currentUrl);
+        } catch (e) {}
+
+        // No submit, garante gravar coords.
+        activeForm.addEventListener('submit', function () {
+          setCropBoxValues();
+        }, { once: false });
+      }
+
+      function looksLikeImageInput(el) {
+        if (!el || el.tagName !== 'INPUT') return false;
+        if ((el.getAttribute('type') || '').toLowerCase() !== 'file') return false;
+        const id = (el.id || '').toLowerCase();
+        const name = (el.name || '').toLowerCase();
+        // Jazzmin e widgets podem variar ids/names; aceitar qualquer coisa que contenha "image".
+        return id === 'id_image' || name === 'image' || id.includes('image') || name.includes('image');
+      }
+
+      function scanForInputs() {
+        try {
+          const all = Array.from(document.querySelectorAll('input[type="file"]'));
+          const candidates = all.filter(looksLikeImageInput);
+          if (candidates.length) {
+            const el = candidates[0];
+            try { console.log('[Oxira] cropper(post) scan found input', el.id || el.name); } catch (e) {}
+            setupForInput(el);
+            return true;
+          }
+        } catch (e) {}
+        return false;
+      }
+
+      // 1) Setup imediato (se o input já está no DOM)
+      const initial = qs('#id_image') || qs('input[type="file"][name="image"]') || qs('.field-image input[type="file"]');
+      if (initial) {
+        try { console.log('[Oxira] cropper(post) found initial input', initial.id || initial.name); } catch (e) {}
+        setupForInput(initial);
+      } else {
+        try { console.log('[Oxira] cropper(post) initial input not found; retrying...'); } catch (e) {}
+        scanForInputs();
+      }
+
+      // 1b) Retry: alguns temas/inlines montam o DOM depois
+      let tries = 0;
+      const timer = setInterval(function () {
+        tries += 1;
+        const el = qs('#id_image') || qs('input[type="file"][name="image"]') || qs('input[type="file"][id$="image"]') || qs('input[type="file"][name$="image"]');
+        if (el) {
+          try { console.log('[Oxira] cropper(post) found input on retry', tries, el.id || el.name); } catch (e) {}
+          setupForInput(el);
+          clearInterval(timer);
+        }
+        if (!el) scanForInputs();
+        if (tries >= 12) {
+          try { console.warn('[Oxira] cropper(post) não encontrou input de imagem após retries'); } catch (e) {}
+          clearInterval(timer);
+        }
+      }, 250);
+
+      // 1c) MutationObserver: se o DOM mudar depois, ainda assim acha o input
+      try {
+        const obs = new MutationObserver(function () {
+          const el = qs('#id_image') || qs('input[type="file"][name="image"]') || qs('input[type="file"][id*="image"]') || qs('input[type="file"][name*="image"]');
+          if (el) {
+            setupForInput(el);
+          } else {
+            scanForInputs();
+          }
+        });
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+      } catch (e) {}
+
+      // 2) Event delegation: funciona mesmo com widgets/trocas dinâmicas
+      document.addEventListener('change', function (e) {
+        const target = e.target;
+        if (looksLikeImageInput(target)) {
+          setupForInput(target);
+          const file = target.files && target.files[0];
+          try { console.log('[Oxira] cropper(post) file change', !!file, target.id || target.name); } catch (e) {}
+          initCropperFromFile(file);
+        }
+        if (target && target.id === 'image-clear_id' && target.checked) {
+          xInput.value = '';
+          yInput.value = '';
+          wInput.value = '';
+          hInput.value = '';
+          destroy();
+        }
+      });
     })();
   </script>
 {% endblock %}

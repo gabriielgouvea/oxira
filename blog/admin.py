@@ -43,6 +43,19 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Dados do Autor'
+
+    class Form(forms.ModelForm):
+        class Meta:
+            model = UserProfile
+            fields = '__all__'
+            widgets = {
+                'avatar_crop_x': forms.HiddenInput(),
+                'avatar_crop_y': forms.HiddenInput(),
+                'avatar_crop_w': forms.HiddenInput(),
+                'avatar_crop_h': forms.HiddenInput(),
+            }
+
+    form = Form
     
     # Widget de Checkbox para as Categorias
     formfield_overrides = {
@@ -69,6 +82,10 @@ class UserProfileInline(admin.StackedInline):
                 'city',
                 'state',
                 'avatar',
+                'avatar_crop_x',
+                'avatar_crop_y',
+                'avatar_crop_w',
+                'avatar_crop_h',
                 'bio',
             )
         }),
@@ -274,6 +291,12 @@ class PostAdmin(admin.ModelAdmin):
         class Meta:
             model = Post
             fields = '__all__'
+            widgets = {
+                'image_crop_x': forms.HiddenInput(),
+                'image_crop_y': forms.HiddenInput(),
+                'image_crop_w': forms.HiddenInput(),
+                'image_crop_h': forms.HiddenInput(),
+            }
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)

@@ -7,10 +7,17 @@ from ckeditor_uploader.fields import RichTextUploadingField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from PIL import Image, ImageOps
+
 # Perfil do Usuário (Avatar, Bio, etc)
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Foto de Perfil")
+    # Crop do avatar (coordenadas em pixels na imagem original)
+    avatar_crop_x = models.PositiveIntegerField(blank=True, null=True)
+    avatar_crop_y = models.PositiveIntegerField(blank=True, null=True)
+    avatar_crop_w = models.PositiveIntegerField(blank=True, null=True)
+    avatar_crop_h = models.PositiveIntegerField(blank=True, null=True)
     bio = models.TextField(blank=True, verbose_name="Biografia")
 
     # Redes sociais / presença online (opcional)
@@ -47,6 +54,53 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self._apply_avatar_crop_if_needed()
+
+    def _apply_avatar_crop_if_needed(self):
+        if not self.avatar:
+            return
+        if not (self.avatar_crop_w and self.avatar_crop_h):
+            return
+
+        # Abre/corta/redimensiona para um quadrado padrão
+        try:
+            path = self.avatar.path
+        except Exception:
+            return
+
+        try:
+            with Image.open(path) as im:
+                im = ImageOps.exif_transpose(im)
+                x = int(self.avatar_crop_x or 0)
+                y = int(self.avatar_crop_y or 0)
+                w = int(self.avatar_crop_w or 0)
+                h = int(self.avatar_crop_h or 0)
+                if w <= 0 or h <= 0:
+                    return
+                # Clamp
+                x = max(0, min(x, im.width - 1))
+                y = max(0, min(y, im.height - 1))
+                x2 = max(x + 1, min(x + w, im.width))
+                y2 = max(y + 1, min(y + h, im.height))
+
+                cropped = im.crop((x, y, x2, y2)).convert('RGB')
+                cropped = cropped.resize((400, 400), Image.Resampling.LANCZOS)
+
+                # Salva sobrescrevendo o arquivo original
+                cropped.save(path, format='JPEG', quality=88, optimize=True, progressive=True)
+        except Exception:
+            return
+
+        # Limpa o crop para não aplicar novamente em futuros saves
+        type(self).objects.filter(pk=self.pk).update(
+            avatar_crop_x=None,
+            avatar_crop_y=None,
+            avatar_crop_w=None,
+            avatar_crop_h=None,
+        )
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -90,6 +144,11 @@ class Post(models.Model):
     # Conteúdo e Mídia
     content = RichTextUploadingField(verbose_name="Conteúdo")
     image = models.ImageField(upload_to='posts/', blank=True, null=True, verbose_name="Imagem Destacada")
+    # Crop da imagem destacada (coordenadas em pixels na imagem original)
+    image_crop_x = models.PositiveIntegerField(blank=True, null=True)
+    image_crop_y = models.PositiveIntegerField(blank=True, null=True)
+    image_crop_w = models.PositiveIntegerField(blank=True, null=True)
+    image_crop_h = models.PositiveIntegerField(blank=True, null=True)
     
     # SEO
     meta_description = models.CharField(max_length=160, blank=True, verbose_name="Meta Descrição (SEO)")
@@ -112,6 +171,50 @@ class Post(models.Model):
     def __str__(self):
         return self.title or f"Post #{self.pk}" if self.pk else "(Sem título)"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self._apply_image_crop_if_needed()
+
+    def _apply_image_crop_if_needed(self):
+        if not self.image:
+            return
+        if not (self.image_crop_w and self.image_crop_h):
+            return
+
+        try:
+            path = self.image.path
+        except Exception:
+            return
+
+        try:
+            with Image.open(path) as im:
+                im = ImageOps.exif_transpose(im)
+                x = int(self.image_crop_x or 0)
+                y = int(self.image_crop_y or 0)
+                w = int(self.image_crop_w or 0)
+                h = int(self.image_crop_h or 0)
+                if w <= 0 or h <= 0:
+                    return
+                x = max(0, min(x, im.width - 1))
+                y = max(0, min(y, im.height - 1))
+                x2 = max(x + 1, min(x + w, im.width))
+                y2 = max(y + 1, min(y + h, im.height))
+
+                cropped = im.crop((x, y, x2, y2)).convert('RGB')
+                # Tamanho padrão de capa: 1280x720 (16:9)
+                cropped = cropped.resize((1280, 720), Image.Resampling.LANCZOS)
+
+                cropped.save(path, format='JPEG', quality=88, optimize=True, progressive=True)
+        except Exception:
+            return
+
+        type(self).objects.filter(pk=self.pk).update(
+            image_crop_x=None,
+            image_crop_y=None,
+            image_crop_w=None,
+            image_crop_h=None,
+        )
+
     def clean(self):
         super().clean()
 
@@ -122,6 +225,21 @@ class Post(models.Model):
 
             if not (self.title or '').strip():
                 errors['title'] = 'Informe um título para publicar.'
+
+            # Imagem destacada: garante um mínimo de qualidade para os cards (tipo portal).
+            # Não bloqueia rascunho; só exige ao publicar.
+            if self.image:
+                try:
+                    w = int(getattr(self.image, 'width', 0) or 0)
+                    h = int(getattr(self.image, 'height', 0) or 0)
+                except Exception:
+                    w = h = 0
+                # 16:9 recomendado (ex.: 1280x720). Aqui usamos um mínimo mais tolerante.
+                if w and h and (w < 960 or h < 540):
+                    errors['image'] = (
+                        'Imagem destacada muito pequena. Recomendo pelo menos 960×540 (ideal: 1280×720) '
+                        'para não ficar pixelada nos destaques.'
+                    )
 
             # Se não tiver slug, gera a partir do título.
             if not (self.slug or '').strip() and (self.title or '').strip():

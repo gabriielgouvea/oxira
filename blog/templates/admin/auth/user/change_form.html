@@ -1,6 +1,57 @@
 {% extends "admin/change_form.html" %}
 {% load i18n %}
 
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+  <style>
+    body.model-user.change-form .oxira-cropper-wrap {
+      margin-top: 10px;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.04);
+    }
+    body.model-user.change-form .oxira-cropper-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      background: linear-gradient(180deg, rgba(220,38,38,.06), rgba(255,255,255,1));
+    }
+    body.model-user.change-form .oxira-cropper-head .title {
+      font-weight: 950;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(17,24,39,.92);
+    }
+    body.model-user.change-form .oxira-cropper-head .hint {
+      font-size: 12px;
+      color: rgba(107,114,128,.95);
+    }
+    body.model-user.change-form .oxira-cropper-stage {
+      max-height: 520px;
+      background: rgba(17,24,39,.02);
+    }
+    body.model-user.change-form .oxira-cropper-stage img {
+      display: block;
+      max-width: 100%;
+    }
+    body.model-user.change-form .oxira-cropper-actions {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(0,0,0,.06);
+      justify-content: flex-end;
+      background: #fff;
+    }
+  </style>
+{% endblock %}
+
 {# Remove botões do topo #}
 {% block submit_buttons_top %}{% endblock %}
 
@@ -36,4 +87,214 @@
       <input type="submit" value="{% translate 'Salvar' %}" class="btn btn-success btn-lg" name="_save">
     </div>
   </div>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <script>
+    (function () {
+      function qs(sel, root) { return (root || document).querySelector(sel); }
+
+      try { console.log('[Oxira] cropper(avatar) init'); } catch (e) {}
+
+      const xInput = qs('input[type="hidden"][name$="-avatar_crop_x"]');
+      const yInput = qs('input[type="hidden"][name$="-avatar_crop_y"]');
+      const wInput = qs('input[type="hidden"][name$="-avatar_crop_w"]');
+      const hInput = qs('input[type="hidden"][name$="-avatar_crop_h"]');
+      if (!xInput || !yInput || !wInput || !hInput) return;
+
+      let cropper = null;
+      let wrap = null;
+      let img = null;
+      let activeInput = null;
+      let activeForm = null;
+
+      function destroy() {
+        try { if (cropper) cropper.destroy(); } catch (e) {}
+        cropper = null;
+        if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        wrap = null;
+        img = null;
+      }
+
+      function ensureUI() {
+        if (wrap) return wrap;
+
+        wrap = document.createElement('div');
+        wrap.className = 'oxira-cropper-wrap';
+        wrap.innerHTML = [
+          '<div class="oxira-cropper-head">',
+          '  <div>',
+          '    <div class="title">Enquadrar avatar</div>',
+          '    <div class="hint">Arraste, dê zoom e posicione (1:1). Ao salvar, aplica o recorte.</div>',
+          '  </div>',
+          '  <div class="hint">Dica: roda do mouse = zoom</div>',
+          '</div>',
+          '<div class="oxira-cropper-stage">',
+          '  <div class="oxira-cropper-empty" style="padding:14px 12px;color:rgba(107,114,128,.95);font-size:13px;">',
+          '    Escolha um avatar para aparecer o enquadramento aqui.',
+          '  </div>',
+          '  <img alt="Prévia do recorte" style="display:none">',
+          '</div>',
+          '<div class="oxira-cropper-actions">',
+          '  <button type="button" class="button" data-action="reset">Reset</button>',
+          '  <button type="button" class="button" data-action="clear">Remover recorte</button>',
+          '</div>'
+        ].join('');
+
+        const container = (activeInput && (activeInput.closest('.form-row')
+          || activeInput.closest('.field-avatar')
+          || activeInput.closest('.form-group')
+          || activeInput.closest('.fieldBox')
+          || activeInput.parentElement)) || document.body;
+        container.appendChild(wrap);
+
+        img = wrap.querySelector('img');
+
+        wrap.addEventListener('click', function (e) {
+          const btn = e.target && e.target.closest && e.target.closest('button[data-action]');
+          if (!btn) return;
+          const action = btn.getAttribute('data-action');
+          if (action === 'reset' && cropper) cropper.reset();
+          if (action === 'clear') {
+            xInput.value = '';
+            yInput.value = '';
+            wInput.value = '';
+            hInput.value = '';
+            destroy();
+            fileInput.value = '';
+          }
+        });
+
+        return wrap;
+      }
+
+      function initCropperFromUrl(url) {
+        if (!url) return;
+        ensureUI();
+        try {
+          const empty = wrap ? wrap.querySelector('.oxira-cropper-empty') : null;
+          if (empty) empty.style.display = 'none';
+          if (img) img.style.display = 'block';
+        } catch (e) {}
+        img.onload = function () {
+          try { if (cropper) cropper.destroy(); } catch (e) {}
+          try {
+            cropper = new Cropper(img, {
+              aspectRatio: 1,
+              viewMode: 1,
+              autoCropArea: 1,
+              dragMode: 'move',
+              background: false,
+              responsive: true,
+              zoomOnWheel: true,
+              movable: true,
+              scalable: false,
+              rotatable: false,
+              crop: function () { setCropBoxValues(); },
+              ready: function () { setCropBoxValues(); },
+            });
+          } catch (e) {
+            // Se o CDN bloquear ou houver CSP, não quebra o admin.
+          }
+        };
+        img.src = url;
+      }
+
+      function setCropBoxValues() {
+        if (!cropper) return;
+        try {
+          const data = cropper.getData(true);
+          xInput.value = Math.max(0, Math.round(data.x || 0));
+          yInput.value = Math.max(0, Math.round(data.y || 0));
+          wInput.value = Math.max(1, Math.round(data.width || 1));
+          hInput.value = Math.max(1, Math.round(data.height || 1));
+        } catch (e) {}
+      }
+
+      function initCropperFromFile(file) {
+        if (!file) {
+          // Não destrói automaticamente: pode existir avatar atual.
+          return;
+        }
+
+        ensureUI();
+        const url = URL.createObjectURL(file);
+        initCropperFromUrl(url);
+      }
+
+      function setupForInput(inputEl) {
+        if (!inputEl || inputEl === activeInput) return;
+        activeInput = inputEl;
+        activeForm = activeInput.closest('form');
+        if (!activeForm) return;
+
+        // Mostra o painel mesmo antes de escolher arquivo
+        ensureUI();
+
+        // Se já existe avatar salvo, permite recortar sem reupload.
+        try {
+          const scope = activeInput.closest('.form-row')
+            || activeInput.closest('.field-avatar')
+            || activeInput.parentElement
+            || document;
+          const currentLink = scope.querySelector('.file-upload a');
+          const currentUrl = currentLink ? currentLink.getAttribute('href') : '';
+          if (currentUrl) initCropperFromUrl(currentUrl);
+        } catch (e) {}
+
+        activeForm.addEventListener('submit', function () {
+          setCropBoxValues();
+        }, { once: false });
+      }
+
+      function looksLikeAvatarInput(el) {
+        if (!el || el.tagName !== 'INPUT') return false;
+        if ((el.getAttribute('type') || '').toLowerCase() !== 'file') return false;
+        const name = (el.name || '').toLowerCase();
+        const id = (el.id || '').toLowerCase();
+        return name.includes('avatar') || id.includes('avatar');
+      }
+
+      const initial = qs('input[type="file"][name$="-avatar"]') || qs('input[type="file"][id$="-avatar"]') || qs('.field-avatar input[type="file"]');
+      if (initial) {
+        try { console.log('[Oxira] cropper(avatar) found initial input', initial.id || initial.name); } catch (e) {}
+        setupForInput(initial);
+      } else {
+        try { console.log('[Oxira] cropper(avatar) initial input not found; retrying...'); } catch (e) {}
+      }
+
+      // Retry: alguns temas montam o DOM depois
+      let tries = 0;
+      const timer = setInterval(function () {
+        tries += 1;
+        const el = qs('input[type="file"][name$="-avatar"]') || qs('input[type="file"][id$="-avatar"]') || qs('input[type="file"][name*="avatar"]') || qs('input[type="file"][id*="avatar"]');
+        if (el) {
+          try { console.log('[Oxira] cropper(avatar) found input on retry', tries, el.id || el.name); } catch (e) {}
+          setupForInput(el);
+          clearInterval(timer);
+        }
+        if (tries >= 12) clearInterval(timer);
+      }, 250);
+
+      document.addEventListener('change', function (e) {
+        const target = e.target;
+        if (looksLikeAvatarInput(target)) {
+          setupForInput(target);
+          const file = target.files && target.files[0];
+          try { console.log('[Oxira] cropper(avatar) file change', !!file, target.id || target.name); } catch (e) {}
+          initCropperFromFile(file);
+        }
+        const tid = (target && target.id) ? target.id.toLowerCase() : '';
+        if (tid.endsWith('-avatar-clear_id') && target.checked) {
+          xInput.value = '';
+          yInput.value = '';
+          wInput.value = '';
+          hInput.value = '';
+          destroy();
+        }
+      });
+    })();
+  </script>
 {% endblock %}
