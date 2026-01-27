@@ -63,6 +63,41 @@
         border-radius: 4px;
         overflow: hidden;
     }
+    .crop-editor-actions {
+        margin-top: 15px;
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    .btn-crop-confirm {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-crop-confirm:hover {
+        background-color: #218838;
+    }
+    .btn-crop-cancel {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-crop-cancel:hover {
+        background-color: #5a6268;
+    }
     .img-container img {
         max-width: 100%;
         display: block; 
@@ -147,6 +182,14 @@
         <div class="crop-stage img-container">
             <img id="image-preview-{{ widget.name }}">
         </div>
+        <div class="crop-editor-actions">
+            <!-- Botão de "Cancelar" limpa o input? Ou só fecha? Vamos fazer limpar para dar opção de "não quero essa foto" -->
+            <button type="button" class="btn-crop-cancel" id="btn-cancel-{{ widget.name }}">Trocar Imagem</button>
+            <button type="button" class="btn-crop-confirm" id="btn-confirm-{{ widget.name }}">
+                <svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Confirmar Recorte
+            </button>
+        </div>
     </div>
 </div>
 
@@ -159,6 +202,9 @@
     const dropZone = wrapper.querySelector('.drop-zone');
     const cropEditor = wrapper.querySelector('.crop-editor-modal');
     const imagePreview = document.getElementById('image-preview-{{ widget.name }}');
+    
+    const btnConfirm = document.getElementById('btn-confirm-{{ widget.name }}');
+    const btnCancel = document.getElementById('btn-cancel-{{ widget.name }}');
     
     // IDs for crop fields (Assumes standard ID generation and usage in PostAdmin)
     // The image field is 'image', so crop fields are 'id_image_crop_x', etc.
@@ -197,15 +243,106 @@
         }
     });
 
+    // Cancelar/Trocar imagem
+    btnCancel.addEventListener('click', () => {
+        input.value = ''; // Limpa o input file
+        cropEditor.style.display = 'none';
+        dropZone.style.display = 'flex';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        // Reseta coordenadas
+        if(cropX) cropX.value = '';
+        if(cropY) cropY.value = '';
+        if(cropW) cropW.value = '';
+        if(cropH) cropH.value = '';
+        
+        // Se tinha imagem inicial (do DB), ela iria aparecer no .current-image-preview se não tivesse sido substituida.
+        // Mas a UI do widget remove o preview quando selecionamos um novo arquivo?
+        // Neste codigo simples, ao limpar, voltamos ao estado inicial de "drop zone".
+    });
+
+    // Confirmar Recorte
+    btnConfirm.addEventListener('click', () => {
+        if (!cropper) return;
+        
+        // Obter canvas recortado para preview
+        const canvas = cropper.getCroppedCanvas({
+            width: 300,  // Thumbnail width
+            height: 169  // Thumbnail height (16:9 approx)
+        });
+        
+        // Criar visualização de sucesso
+        cropEditor.style.display = 'none';
+        dropZone.style.display = 'flex';
+        
+        // Atualizar DropZone para mostrar que está selecionado
+        dropZone.innerHTML = '';
+        
+        const successMsg = document.createElement('div');
+        successMsg.style.display = 'flex';
+        successMsg.style.flexDirection = 'column';
+        successMsg.style.alignItems = 'center';
+        successMsg.style.gap = '10px';
+        
+        const thumb = document.createElement('img');
+        thumb.src = canvas.toDataURL();
+        thumb.style.maxWidth = '200px';
+        thumb.style.borderRadius = '8px';
+        thumb.style.border = '2px solid #28a745';
+        thumb.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        
+        const msg = document.createElement('div');
+        msg.innerHTML = '<strong style="color:#28a745; display:flex; align-items:center; gap:5px;"><svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Recorte Confirmado!</strong><br><span style="font-size:0.9em;color:#666">Pronto para salvar o post.</span>';
+        msg.style.textAlign = 'center';
+        
+        const btnChange = document.createElement('button');
+        btnChange.textContent = 'Trocar / Editar Imagem';
+        btnChange.className = 'button'; // Classe padrão django admin ou similar
+        btnChange.style.marginTop = '10px';
+        btnChange.type = 'button';
+        btnChange.onclick = (e) => {
+            e.stopPropagation(); // Evita reabrir o file dialog nativo do click do dropzone
+            // Reabre o editor sem limpar o input
+            dropZone.style.display = 'none';
+            cropEditor.style.display = 'block';
+            resetDropZonePrompt(); // Prepara para se cancelar depois
+        };
+
+        successMsg.appendChild(thumb);
+        successMsg.appendChild(msg);
+        successMsg.appendChild(btnChange);
+        
+        dropZone.appendChild(successMsg);
+        
+        // Remove temporarily the click listener to open file dialog, 
+        // to prevent users from accidentally opening dialog when clicking empty space in success box
+        // Actually, we can just make the successMsg click stop propagation?
+        // Simpler: we replaced innerHTML, so the nice click-to-upload prompt is gone.
+        // We need to support "Change Image" flow.
+    });
+
+    function resetDropZonePrompt() {
+        // Restaura o prompt original do DropZone para caso o usuario cancele a edicao
+        dropZone.innerHTML = `
+        <div class="drop-zone__prompt">
+            <svg class="drop-zone__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+            <span>Arraste e solte sua imagem aqui ou clique para selecionar</span>
+        </div>`;
+    }
+
     function handleFiles(files) {
         const file = files[0];
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 imagePreview.src = e.target.result;
-                cropEditor.style.display = 'block';
                 
-                // Hide any existing preview if replacing
+                dropZone.style.display = 'none'; // Hide drop zone
+                cropEditor.style.display = 'block'; // Show editor
                 
                 if (cropper) {
                     cropper.destroy();
@@ -215,7 +352,7 @@
                 setTimeout(() => {
                     cropper = new Cropper(imagePreview, {
                         viewMode: 1, // Restrict crop box to not exceed the size of the canvas
-                        dragMode: 'move',
+                        dragMode: 'move', // Permite mover a imagem por padrão
                         autoCropArea: 0.8,
                         restore: false,
                         guides: true,
@@ -224,6 +361,12 @@
                         cropBoxMovable: true,
                         cropBoxResizable: true,
                         toggleDragModeOnDblclick: false,
+                        aspectRatio: 16 / 9, // Força 16:9 como padrão sugerido? O user pediu livre?
+                        // O user disse "pedindo pra cortar e enquadrar a foto do tamanho certo que e necessario"
+                        // O help_text diz "16:9". Vamos travar ou deixar livre? 
+                        // Melhor deixar livre mas iniciar com 16:9, ou travar se for critico.
+                        // User: "tamanho certo que e necessario pra ficar bonito". Isso sugere TRAVAR o aspect ratio.
+                        
                         crop(event) {
                             // Update hidden fields
                             if(cropX) cropX.value = Math.round(event.detail.x);
