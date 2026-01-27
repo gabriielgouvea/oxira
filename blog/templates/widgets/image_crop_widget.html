@@ -1,0 +1,241 @@
+{% load static %}
+<style>
+    .image-crop-widget-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+        border-color: #417690;
+        background-color: #eef6f9;
+        color: #417690;
+        transform: scale(1.01);
+    }
+    .drop-zone__prompt {
+        font-size: 1.1rem;
+        font-weight: 500;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    .drop-zone__icon {
+        width: 64px;
+        height: 64px;
+        fill: currentColor;
+        margin-bottom: 10px;
+    }
+    .crop-editor-modal {
+        margin-top: 20px;
+        border: 1px solid #dee2e6;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        display: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .crop-editor-header {
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #333;
+        font-size: 1.1em;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .crop-stage {
+        max-height: 600px;
+        background-color: #333; /* Dark background for better contrast while cropping */
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .img-container img {
+        max-width: 100%;
+        display: block; 
+    }
+    /* Hide the default Django file input but keep it functional */
+    .file-upload-input {
+        display: none;
+    }
+    /* Current image display */
+    .current-image-preview {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    .current-image-thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+    .current-image-info {
+        flex: 1;
+    }
+    .current-image-info a {
+        font-weight: 600;
+        color: #417690;
+        text-decoration: none;
+    }
+    .current-image-info label {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.9em;
+        color: #dc3545;
+        cursor: pointer;
+    }
+</style>
+
+<div class="image-crop-widget-wrapper" id="widget-{{ widget.name }}">
+    
+    {% if widget.is_initial %}
+        <div class="current-image-preview">
+            {% if widget.value %}
+                <img src="{{ widget.value.url }}" class="current-image-thumb" alt="Imagem Atual">
+            {% endif %}
+            <div class="current-image-info">
+                <p>Imagem Atual: <a href="{{ widget.value.url }}" target="_blank">{{ widget.value }}</a></p>
+                {% if not widget.required %}
+                <label>
+                    <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+                    Remover imagem atual
+                </label>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <input type="{{ widget.type }}" name="{{ widget.name }}" id="{{ widget.attrs.id }}" class="file-upload-input" 
+           {% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %} 
+           {% include "django/forms/widgets/attrs.html" %}>
+
+    <div class="drop-zone" id="drop-zone-{{ widget.name }}">
+        <div class="drop-zone__prompt">
+            <!-- Upload Icon -->
+            <svg class="drop-zone__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+            <span>Arraste e solte sua imagem aqui ou clique para selecionar</span>
+        </div>
+    </div>
+
+    <div class="crop-editor-modal" id="crop-editor-{{ widget.name }}">
+        <div class="crop-editor-header">
+            Editor de Recorte
+            <small style="display:block; font-weight:normal; color:#666; font-size:0.9em; margin-top:5px;">Ajuste o enquadramento da imagem. As coordenadas são salvas automaticamente.</small>
+        </div>
+        <div class="crop-stage img-container">
+            <img id="image-preview-{{ widget.name }}">
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const wrapper = document.getElementById('widget-{{ widget.name }}');
+    // Using the ID from widget.attrs.id to match Django's generated ID
+    const inputId = '{{ widget.attrs.id }}'; 
+    const input = document.getElementById(inputId);
+    const dropZone = wrapper.querySelector('.drop-zone');
+    const cropEditor = wrapper.querySelector('.crop-editor-modal');
+    const imagePreview = document.getElementById('image-preview-{{ widget.name }}');
+    
+    // IDs for crop fields (Assumes standard ID generation and usage in PostAdmin)
+    // The image field is 'image', so crop fields are 'id_image_crop_x', etc.
+    // If the widget is used on a field named differently, this might need adjustment (custom attr on widget)
+    const baseId = inputId; // e.g. id_image
+    const cropX = document.getElementById(baseId + '_crop_x');
+    const cropY = document.getElementById(baseId + '_crop_y');
+    const cropW = document.getElementById(baseId + '_crop_w');
+    const cropH = document.getElementById(baseId + '_crop_h');
+
+    let cropper = null;
+
+    dropZone.addEventListener('click', () => input.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            input.files = e.dataTransfer.files;
+            handleFiles(e.dataTransfer.files);
+        }
+    });
+
+    input.addEventListener('change', () => {
+        if (input.files.length) {
+            handleFiles(input.files);
+        }
+    });
+
+    function handleFiles(files) {
+        const file = files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                cropEditor.style.display = 'block';
+                
+                // Hide any existing preview if replacing
+                
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                // Use a small timeout to ensure image is loaded in DOM
+                setTimeout(() => {
+                    cropper = new Cropper(imagePreview, {
+                        viewMode: 1, // Restrict crop box to not exceed the size of the canvas
+                        dragMode: 'move',
+                        autoCropArea: 0.8,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        crop(event) {
+                            // Update hidden fields
+                            if(cropX) cropX.value = Math.round(event.detail.x);
+                            if(cropY) cropY.value = Math.round(event.detail.y);
+                            if(cropW) cropW.value = Math.round(event.detail.width);
+                            if(cropH) cropH.value = Math.round(event.detail.height);
+                        },
+                    });
+                }, 100);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+})();
+</script>

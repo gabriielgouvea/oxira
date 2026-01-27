@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
 from .models import Post, Category, UserProfile, PendingAuthor
+from .widgets import ImageCropWidget
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.encoding import force_bytes
@@ -292,6 +293,7 @@ class PostAdmin(admin.ModelAdmin):
             model = Post
             fields = '__all__'
             widgets = {
+                'image': ImageCropWidget(),
                 'image_crop_x': forms.HiddenInput(),
                 'image_crop_y': forms.HiddenInput(),
                 'image_crop_w': forms.HiddenInput(),
