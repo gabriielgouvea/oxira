@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
 from .models import Post, Category, UserProfile, PendingAuthor
+from .models_ads import AdConfig
+from .admin_ads import AdConfigAdmin
 from .widgets import ImageCropWidget
 from django.utils.html import format_html
 from django.urls import reverse

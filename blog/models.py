@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from ckeditor_uploader.fields import RichTextUploadingField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from .models_ads import AdConfig
 
 from PIL import Image, ImageOps
 

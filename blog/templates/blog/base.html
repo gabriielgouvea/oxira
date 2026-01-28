@@ -1,6 +1,14 @@
 <!DOCTYPE html>
+{% load blog_ads %}
 <html lang="pt-br">
 <head>
+    {% get_ad_config as ad_config %}
+    {% if ad_config %}
+        <!-- Google AdSense Auto Ads -->
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ad_config.publisher_id }}"
+             crossorigin="anonymous"></script>
+    {% endif %}
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oxira | Informação sem enrolação</title>
